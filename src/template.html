@@ -1,0 +1,575 @@
+<title>Duello D&D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Alegreya+SC:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: due schede personaggio affiancate, poi comandi, risultati, confronti, log. */
+:root {
+  --bg: #eceff0; --surface: #ffffff; --surface2: #f4f6f7; --ink: #1b2124; --muted: #5a666b; --line: #d2d9dc;
+  --ember: #b8431c; --ember-soft: #f6e4dc; --grave: #1f7a72; --grave-soft: #dcefec; --draw: #9aa5aa;
+  --focus: #1b2124;
+  --f-display: 'Alegreya SC', 'Iowan Old Style', Georgia, serif;
+  --f-body: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121618; --surface: #1b2023; --surface2: #22292c; --ink: #e5eaec; --muted: #94a1a7; --line: #2d363a;
+    --ember: #e2794f; --ember-soft: #3a2118; --grave: #52b8ad; --grave-soft: #14312d; --draw: #6a767b; --focus: #e5eaec;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121618; --surface: #1b2023; --surface2: #22292c; --ink: #e5eaec; --muted: #94a1a7; --line: #2d363a;
+  --ember: #e2794f; --ember-soft: #3a2118; --grave: #52b8ad; --grave-soft: #14312d; --draw: #6a767b; --focus: #e5eaec;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 17px; line-height: 1.45;
+  padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+h1 { font-size: clamp(2rem, 5vw, 2.9rem); line-height: 1.05; }
+h2 { font-size: 1.45rem; }
+h3 { font-size: 1.15rem; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 62ch; margin-top: 8px; }
+.lab { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+.sheets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; min-width: 0; }
+.sheet-h { padding: 14px 16px 12px; border-bottom: 3px solid var(--c); display: flex; flex-direction: column; gap: 2px; }
+.sheet.pal { --c: var(--ember); --soft: var(--ember-soft); }
+.sheet.cle { --c: var(--grave); --soft: var(--grave-soft); }
+.sheet-h .who { color: var(--c); font-family: var(--f-display); font-size: 1.5rem; font-weight: 700; line-height: 1.1; }
+.sheet-h .sub { color: var(--muted); }
+.derived { background: var(--soft); padding: 9px 16px; font-family: var(--f-mono); font-size: .8rem; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.grp { padding: 14px 16px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.grp:first-of-type { border-top: 0; }
+.fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px 12px; }
+.field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.field label { font-size: .82rem; color: var(--muted); line-height: 1.15; }
+.wide { grid-column: 1 / -1; }
+input[type="number"], input[type="text"], select {
+  font: inherit; font-family: var(--f-mono); font-size: .92rem; color: var(--ink); background: var(--surface2);
+  border: 1px solid var(--line); border-radius: 3px; padding: 6px 8px; width: 100%; min-width: 0; min-height: 36px;
+}
+select { font-family: var(--f-body); font-size: 1rem; }
+input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+input[type="text"] { font-family: var(--f-body); font-size: 1rem; }
+.weapon { border: 1px solid var(--line); border-radius: 3px; padding: 10px 12px; background: var(--surface2); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.weapon + .weapon { margin-top: 0; }
+.wh { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.wh b { font-family: var(--f-display); font-size: 1.05rem; color: var(--c); }
+.wh select { width: auto; max-width: 100%; min-height: 32px; padding: 3px 6px; }
+.weapon .fields { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+.weapon input[type="number"], .weapon input[type="text"], .weapon select { background: var(--surface); }
+.xrows { display: flex; flex-direction: column; gap: 6px; }
+.xrow, .xhead { display: grid; grid-template-columns: minmax(0, 1.5fr) 58px 58px 58px minmax(0, 1.4fr) 36px; gap: 6px; align-items: center; }
+.xhead span { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.xrow button { padding: 0; min-height: 36px; border-color: var(--line); color: var(--muted); }
+.xadd { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.xadd select { width: auto; flex: 1 1 200px; min-height: 36px; }
+.xadd button { min-height: 36px; padding: 4px 12px; }
+.checks { display: flex; flex-direction: column; gap: 6px; }
+.check { display: flex; gap: 9px; align-items: flex-start; font-size: .98rem; cursor: pointer; }
+.check input { margin-top: 4px; width: 17px; height: 17px; accent-color: var(--c); flex: none; }
+.check small { color: var(--muted); display: block; line-height: 1.25; }
+
+.bar { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: flex-end; }
+.bar .field { width: 130px; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+button {
+  font: inherit; font-weight: 700; border-radius: 3px; border: 1px solid var(--ink); background: transparent; color: var(--ink);
+  padding: 8px 15px; min-height: 40px; cursor: pointer;
+}
+button.primary { background: var(--ink); color: var(--bg); }
+button:hover { opacity: .88; }
+button:disabled { opacity: .45; cursor: progress; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 18px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.panel-h { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; justify-content: space-between; }
+.note { color: var(--muted); font-size: .92rem; }
+
+.wl { display: flex; flex-direction: column; gap: 8px; }
+.wl-bar { display: flex; height: 46px; border-radius: 3px; overflow: hidden; background: var(--surface2); }
+.wl-bar > div { display: flex; align-items: center; padding: 0 12px; color: #fff; font-family: var(--f-mono); font-weight: 500; white-space: nowrap; overflow: hidden; min-width: 0; }
+.wl-p { background: var(--ember); } .wl-c { background: var(--grave); justify-content: flex-end; } .wl-d { background: var(--draw); }
+.wl-names { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.wl-names b { font-family: var(--f-display); font-size: 1.1rem; }
+.wl-names .p { color: var(--ember); } .wl-names .c { color: var(--grave); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat { background: var(--surface2); border-radius: 3px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.stat .v { font-family: var(--f-mono); font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.hist { display: flex; align-items: flex-end; gap: 3px; height: 130px; border-bottom: 1px solid var(--line); padding-top: 6px; }
+.hist .col { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 3px; }
+.hist .col i { display: block; width: 100%; background: var(--ink); opacity: .78; border-radius: 2px 2px 0 0; min-height: 1px; }
+.hist-x { display: flex; gap: 3px; }
+.hist-x span { flex: 1; text-align: center; font-family: var(--f-mono); font-size: .72rem; color: var(--muted); min-width: 0; }
+.src { display: flex; flex-direction: column; gap: 6px; }
+.src-row { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) 3.4rem; gap: 8px; align-items: center; font-size: .95rem; }
+.src-row .t { height: 14px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.src-row .t i { display: block; height: 100%; background: var(--c); }
+.src-row .n { font-family: var(--f-mono); font-size: .84rem; text-align: right; }
+
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+th { text-align: left; font-size: .76rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); vertical-align: middle; }
+td.num, th.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.mini { display: flex; height: 16px; min-width: 150px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.mini i { display: block; height: 100%; }
+.mini .a { background: var(--ember); } .mini .b { background: var(--grave); } .mini .c { background: var(--draw); }
+.sweep-ctl { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.sweep-ctl .field { flex: 1 1 260px; }
+
+.log { font-family: var(--f-mono); font-size: .84rem; line-height: 1.5; max-height: 460px; overflow: auto; background: var(--surface2); border-radius: 3px; padding: 12px 14px; white-space: pre-wrap; }
+.log .rd { display: block; margin-top: 8px; font-weight: 500; color: var(--ink); }
+.log .tp { display: block; color: var(--ember); margin-top: 4px; } .log .tc { display: block; color: var(--grave); margin-top: 4px; }
+.log .win { display: block; margin-top: 10px; font-family: var(--f-display); font-size: 1.1rem; font-weight: 700; }
+.log .ln { color: var(--ink); opacity: .86; }
+details.rules { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 14px 18px; }
+details.rules summary { cursor: pointer; font-family: var(--f-display); font-weight: 700; font-size: 1.15rem; }
+details.rules ul { margin: 12px 0 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 6px; }
+.prog { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: var(--ink); transition: width .1s linear; }
+
+@media (max-width: 820px) {
+  .sheets, .two { grid-template-columns: minmax(0, 1fr); }
+  .btns { margin-left: 0; width: 100%; } .btns button { flex: 1 1 auto; }
+  .src-row { grid-template-columns: minmax(0, 8rem) minmax(0, 1fr) 3.2rem; }
+}
+@media (max-width: 520px) {
+  .xhead { display: none; }
+  .xrow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .xrow > :first-child { grid-column: 1 / -1; }
+  .xrow > select { grid-column: 1 / 3; }
+}
+@media (prefers-reduced-motion: reduce) { .prog i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Duello D&amp;D</h1>
+    <p class="lede">Paladino della Vendetta (Firbolg) contro Chierico della Tomba (Halfling), 5ª edizione, livello 5. Regola le statistiche e le strategie, scegli quante volte combattere e leggi le medie.</p>
+  </header>
+
+  <section class="sheets" aria-label="Personaggi">
+    <div class="sheet pal">
+      <div class="sheet-h"><span class="who">Paladino</span><span class="sub">Giuramento della Vendetta · Firbolg</span></div>
+      <div class="derived" id="d_pal"></div>
+      <div class="grp"><span class="lab">Statistiche</span><div class="fields" id="f_pal"></div></div>
+      <div class="grp"><span class="lab">Armi</span><div id="w_pm" class="weapons"></div><div id="w_pr" class="weapons"></div><p class="note">Le armi a due mani non hanno uno stile dedicato: togli lo stile Duellante e il bonus dello scudo dalla CA.</p></div>
+      <div class="grp"><span class="lab">Strategia</span><div class="fields" id="s_pal"></div><div class="checks" id="k_pal"></div></div>
+    </div>
+    <div class="sheet cle">
+      <div class="sheet-h"><span class="who">Chierico</span><span class="sub">Dominio della Tomba · Halfling</span></div>
+      <div class="derived" id="d_cle"></div>
+      <div class="grp"><span class="lab">Statistiche</span><div class="fields" id="f_cle"></div></div>
+      <div class="grp"><span class="lab">Arma</span><div id="w_cw" class="weapons"></div><p class="note">Usata solo se scegli «Attacco con l'arma» come azione senza slot. L'Arma Spirituale non è influenzata dall'incantamento.</p></div>
+      <div class="grp"><span class="lab">Strategia</span><div class="fields" id="s_cle"></div><div class="checks" id="k_cle"></div></div>
+    </div>
+  </section>
+
+  <section class="bar" aria-label="Comandi">
+    <div class="field"><label for="g_dist">Distanza iniziale (ft)</label><input type="number" id="g_dist" value="30" min="5" max="300" step="5"></div>
+    <div class="field"><label for="g_rounds">Round massimi</label><input type="number" id="g_rounds" value="30" min="3" max="100"></div>
+    <div class="field"><label for="g_n">Numero di duelli</label><input type="number" id="g_n" value="10000" min="1" max="500000" step="1000"></div>
+    <div class="field"><label for="g_seed">Seed (facoltativo)</label><input type="number" id="g_seed" placeholder="casuale"></div>
+    <div class="btns">
+      <button class="primary" id="b_run">Simula</button>
+      <button id="b_one">Un solo duello</button>
+      <button id="b_reset">Valori iniziali</button>
+    </div>
+  </section>
+
+  <section class="panel" id="res" aria-live="polite">
+    <div class="panel-h"><h2>Risultati</h2><span class="note mono" id="r_meta"></span></div>
+    <div class="prog" aria-hidden="true"><i id="r_prog"></i></div>
+    <div class="wl">
+      <div class="wl-names"><b class="p">Paladino <span class="mono" id="r_pp"></span></b><b class="c"><span class="mono" id="r_cp"></span> Chierico</b></div>
+      <div class="wl-bar" id="r_bar"></div>
+      <p class="note" id="r_err"></p>
+    </div>
+    <div class="stats" id="r_stats"></div>
+    <div class="two">
+      <div><h3>Durata dei duelli</h3><p class="note">Quanti duelli finiscono al round indicato.</p><div class="hist" id="r_hist"></div><div class="hist-x" id="r_histx"></div></div>
+      <div>
+        <h3>Danni medi per duello, per fonte</h3>
+        <div class="src" id="r_src_p" style="--c: var(--ember); margin-top: 8px"></div>
+        <div class="src" id="r_src_c" style="--c: var(--grave); margin-top: 14px"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-h"><h2>Probabilità e danni attesi del paladino</h2><span class="note">Calcolo esatto contro la CA del chierico, 2 attacchi per round</span></div>
+    <div class="tablewrap"><table id="t_an"></table></div>
+    <p class="note">La Punizione Divina si decide dopo aver visto il colpo, quindi non si spreca mai sui mancati. Vale solo in mischia.</p>
+  </section>
+
+  <section class="panel">
+    <div class="panel-h"><h2>Confronta strategie</h2><span class="note">Cambia una sola impostazione e tiene fermo il resto</span></div>
+    <div class="sweep-ctl">
+      <div class="field"><label for="w_key">Cosa confrontare</label><select id="w_key"></select></div>
+      <button id="b_sweep">Confronta</button>
+    </div>
+    <div class="prog" aria-hidden="true"><i id="w_prog"></i></div>
+    <div class="tablewrap"><table id="t_sw"></table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-h"><h2>Cronaca di un duello</h2><span class="note">Premi «Un solo duello» per vederne uno round per round</span></div>
+    <div class="log" id="log">Nessun duello ancora.</div>
+  </section>
+
+  <details class="rules">
+    <summary>Regole modellate e semplificazioni</summary>
+    <ul>
+      <li>Combattimento 1 contro 1 fino a 0 PF, senza tiri salvezza contro morte. Il chierico resta fermo e non cerca di allontanarsi.</li>
+      <li>Paladino: Attacco Extra, Punizione Divina (solo mischia), Imposizione delle Mani, Voto di Inimicizia (vantaggio su tutti gli attacchi contro il chierico, serve essere entro 10 ft), Passo Nascosto del Firbolg (invisibile fino al primo attacco), Passo Velato, Marchio del Cacciatore, Marchio Infuocante, Scudo della Fede, Blocca Persona, Anatema, Benedizione. Competenza nei tiri salvezza di Saggezza e Carisma.</li>
+      <li>Chierico: Spirito Guardiano (danni all'inizio del turno del paladino se entro 15 ft e quando entra nell'area), Blocca Persona, Tocco Vampirico, Anatema, Benedizione, Arma Spirituale, Fiamma Sacra, Infliggi Ferite su bersaglio paralizzato (critico automatico), Cura Ferite, Sentiero verso la Tomba (il prossimo colpo contro il paladino infligge il doppio). Fortunato dell'halfling: ritira gli 1 naturali su attacchi, tiri salvezza e iniziativa.</li>
+      <li>Armi: l'incantamento (+N) si somma a colpire e ai danni. I danni aggiuntivi possono valere a ogni colpo, solo sul critico, al primo colpo di ogni turno o al primo colpo del duello. Sui critici i dadi si raddoppiano, tranne per l'effetto «solo critico». La Punizione Divina dipende dalla politica scelta: la modalità intelligente usa lo slot di 1° livello sui colpi normali e tiene quello di 2° per i critici e i colpi letali. Puoi anche tenere slot in riserva o smitare solo quando il chierico è sotto una certa percentuale di PF.</li>
+      <li>Concentrazione: ogni danno richiede un tiro salvezza su Costituzione (CD 10 o metà del danno). Essere paralizzato interrompe la concentrazione.</li>
+      <li>Non modellati: dimezzamento della velocità dentro Spirito Guardiano, riposi, oggetti magici, talenti, Raggio Indebolente e Sanctuary. L'Aura di Protezione arriva al livello 6.</li>
+      <li>A livello 5 il paladino non ha incantesimi offensivi a distanza. Per colpire da lontano usa un'arma, con Marchio Infuocante come bonus una tantum.</li>
+    </ul>
+  </details>
+</div>
+
+<script>
+/*ENGINE*/
+</script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const fmt = (x, n) => Number(x).toFixed(n === undefined ? 1 : n);
+  const sg = (x) => (x >= 0 ? '+' : '') + x;
+
+  // ----- schema dei campi -----
+  const PAL_STATS = [
+    ['hp', 'Punti ferita'], ['ac', 'CA (armatura + scudo)'], ['prof', 'Competenza'],
+    ['strMod', 'Mod. Forza'], ['dexMod', 'Mod. Destrezza'], ['conMod', 'Mod. Costituzione'],
+    ['wisMod', 'Mod. Saggezza'], ['chaMod', 'Mod. Carisma'], ['speed', 'Velocità (ft)'],
+    ['slot1', 'Slot 1° livello'], ['slot2', 'Slot 2° livello'], ['loh', 'Imposizione delle Mani (PF)'],
+    ['cd', 'Incanalare Divinità'], ['hiddenUses', 'Passo Nascosto (usi)']
+  ];
+  const CLE_STATS = [
+    ['hp', 'Punti ferita'], ['ac', 'CA (armatura + scudo)'], ['prof', 'Competenza'],
+    ['wisMod', 'Mod. Saggezza'], ['dexMod', 'Mod. Destrezza'], ['conMod', 'Mod. Costituzione'],
+    ['chaMod', 'Mod. Carisma'], ['speed', 'Velocità (ft)'],
+    ['slot1', 'Slot 1° livello'], ['slot2', 'Slot 2° livello'], ['slot3', 'Slot 3° livello'], ['cd', 'Incanalare Divinità']
+  ];
+  const PAL_SEL = [
+    ['style', 'Stile di combattimento', [['duel', 'Duellante (+2 danni)'], ['def', 'Difesa (+1 CA)'], ['none', 'Nessuno']]],
+    ['smite', 'Punizione Divina', [['smart', 'Intelligente: slot 2° solo se letale o critico'], ['always', 'Slot più basso, ogni colpo'], ['always_high', 'Slot più alto, ogni colpo'], ['lvl1', 'Solo slot 1°'], ['lvl2', 'Solo slot 2°'], ['crit', 'Solo sui critici'], ['never', 'Mai']]],
+    ['rangedRounds', 'Attacco a distanza prima di caricare', [[0, 'No, carica subito'], [1, 'Per 1 round'], [2, 'Per 2 round'], [3, 'Per 3 round'], [99, 'Sempre a distanza']]],
+    ['actionSpell', 'Incantesimo d\'apertura (azione)', [['none', 'Nessuno'], ['hold', 'Blocca Persona'], ['bane', 'Anatema'], ['bless', 'Benedizione']]],
+    ['bonusSpell', 'Incantesimo con azione bonus', [['none', 'Nessuno'], ['hm', 'Marchio del Cacciatore'], ['branding', 'Marchio Infuocante'], ['sof', 'Scudo della Fede']]]
+  ];
+  const PAL_NUM2 = [['smiteReserve', 'Slot di Punizione da tenere in riserva'], ['smiteHpThr', 'Punizione solo se PF chierico sotto il %'], ['lohThr', 'Imposizione sotto il % di PF']];
+  const PAL_CHK = [
+    ['vow', 'Voto di Inimicizia', 'Azione bonus, vantaggio su tutti gli attacchi'],
+    ['hidden', 'Passo Nascosto', 'Invisibile fino al primo attacco'],
+    ['misty', 'Passo Velato per avvicinarsi', 'Teletrasporto di 30 ft con slot di 2° livello']
+  ];
+  const CLE_SEL = [
+    ['opening', 'Incantesimo di concentrazione', [['sg', 'Spirito Guardiano'], ['hold', 'Blocca Persona'], ['vt', 'Tocco Vampirico'], ['bane', 'Anatema'], ['bless', 'Benedizione']]],
+    ['noSlot', 'Azione senza slot', [['flame', 'Fiamma Sacra'], ['weapon', 'Attacco con l\'arma']]]
+  ];
+  const CLE_NUM2 = [['healThr', 'Cura sotto il % di PF']];
+  const CLE_CHK = [
+    ['lucky', 'Fortunato (Halfling)', 'Ritira gli 1 naturali'],
+    ['path', 'Sentiero verso la Tomba', 'Incanalare Divinità: il prossimo colpo infligge il doppio']
+  ];
+
+  const DEF = defaults();
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+  // ----- editor delle armi -----
+  const MELEE_PRE = [['Spada lunga', 1, 8], ['Spada corta', 1, 6], ['Stocco', 1, 8], ['Ascia da battaglia', 1, 8], ['Martello da guerra', 1, 8], ['Mazza', 1, 6], ['Spadone', 2, 6], ['Ascia bipenne', 1, 12]];
+  const RANGED_PRE = [['Giavellotto', 1, 6, 'str', 30, 120], ['Arco lungo', 1, 8, 'dex', 150, 600], ['Arco corto', 1, 6, 'dex', 80, 320], ['Balestra leggera', 1, 8, 'dex', 80, 320], ['Ascia a mano', 1, 6, 'str', 20, 60]];
+  const CLE_PRE = [['Mazza', 1, 6], ['Randello', 1, 4], ['Bastone ferrato', 1, 6], ['Martello leggero', 1, 4]];
+  const EXTRA_PRE = [
+    ['Fuoco (Lingua di Fiamma)', 2, 6, 0, 'hit'], ['Freddo', 1, 6, 0, 'hit'], ['Fulmine', 1, 6, 0, 'hit'], ['Radioso', 1, 8, 0, 'hit'],
+    ['Necrotico', 1, 8, 0, 'hit'], ['Danno extra solo sul critico', 2, 6, 0, 'crit'], ['Danno extra una volta per turno', 1, 6, 0, 'turn'],
+    ['Personalizzato', 1, 6, 0, 'hit']
+  ];
+  const TRIGGERS = [['hit', 'Ogni colpo'], ['crit', 'Solo critico'], ['turn', 'Primo colpo del turno'], ['first', 'Primo colpo del duello']];
+  const WMETA = {
+    pm: { title: 'Arma da mischia', pre: MELEE_PRE, ranged: false, cls: 'pal' },
+    pr: { title: 'Arma a distanza', pre: RANGED_PRE, ranged: true, cls: 'pal' },
+    cw: { title: 'Mischia del chierico', pre: CLE_PRE, ranged: false, cls: 'cle' }
+  };
+  let WS = freshWeapons();
+  function freshWeapons() { return { pm: clone(DEF.pal.melee), pr: clone(DEF.pal.ranged), cw: clone(DEF.cle.weapon) }; }
+  function wNum(k, f, label, val) {
+    return '<div class="field"><label for="w_' + k + '_' + f + '">' + label + '</label><input type="number" id="w_' + k + '_' + f + '" data-f="' + f + '" value="' + val + '" step="1"></div>';
+  }
+  function renderWeapon(k) {
+    const w = WS[k], m = WMETA[k];
+    let h = '<div class="weapon" data-w="' + k + '" style="--c: var(--' + (m.cls === 'pal' ? 'ember' : 'grave') + ')"><div class="wh"><b>' + m.title + '</b>' +
+      '<select id="w_' + k + '_pre" data-act="preset" aria-label="Modello di arma"><option value="">Scegli un modello…</option>' +
+      m.pre.map((p, i) => '<option value="' + i + '">' + p[0] + ' (' + p[1] + 'd' + p[2] + ')</option>').join('') + '</select></div>';
+    h += '<div class="fields">' + wNum(k, 'n', 'Dadi', w.n) + wNum(k, 'die', 'Facce del dado', w.die) + wNum(k, 'ench', 'Incantamento (+N)', w.ench);
+    if (m.ranged) {
+      h += '<div class="field"><label for="w_' + k + '_abil">Caratteristica</label><select id="w_' + k + '_abil" data-f="abil"><option value="str"' + (w.abil === 'str' ? ' selected' : '') + '>Forza</option><option value="dex"' + (w.abil === 'dex' ? ' selected' : '') + '>Destrezza</option></select></div>' +
+        wNum(k, 'normal', 'Gittata normale (ft)', w.normal) + wNum(k, 'long', 'Gittata lunga (ft)', w.long);
+    }
+    h += '</div><div class="xrows"><span class="lab">Danni aggiuntivi</span>';
+    if (w.extras.length) {
+      h += '<div class="xhead"><span>Nome</span><span>Dadi</span><span>Facce</span><span>Bonus</span><span>Quando</span><span></span></div>';
+      w.extras.forEach((e, i) => {
+        const p = 'w_' + k + '_x' + i + '_';
+        h += '<div class="xrow"><input type="text" id="' + p + 'label" data-xi="' + i + '" data-xf="label" value="' + esc(e.label) + '" aria-label="Nome del danno">' +
+          '<input type="number" id="' + p + 'n" data-xi="' + i + '" data-xf="n" value="' + e.n + '" aria-label="Dadi">' +
+          '<input type="number" id="' + p + 'die" data-xi="' + i + '" data-xf="die" value="' + e.die + '" aria-label="Facce">' +
+          '<input type="number" id="' + p + 'bonus" data-xi="' + i + '" data-xf="bonus" value="' + e.bonus + '" aria-label="Bonus fisso">' +
+          '<select id="' + p + 'trigger" data-xi="' + i + '" data-xf="trigger" aria-label="Quando si applica">' +
+          TRIGGERS.map((t) => '<option value="' + t[0] + '"' + (e.trigger === t[0] ? ' selected' : '') + '>' + t[1] + '</option>').join('') + '</select>' +
+          '<button type="button" data-act="del" data-xi="' + i + '" aria-label="Rimuovi">×</button></div>';
+      });
+    } else h += '<p class="note">Nessun danno aggiuntivo. Aggiungine uno per fuoco, freddo, radioso e simili.</p>';
+    h += '</div><div class="xadd"><select id="w_' + k + '_xpre" aria-label="Effetto da aggiungere">' +
+      EXTRA_PRE.map((p, i) => '<option value="' + i + '">' + p[0] + ' (' + (p[1] ? p[1] + 'd' + p[2] : '') + ')</option>').join('') +
+      '</select><button type="button" data-act="add">Aggiungi</button></div></div>';
+    $('w_' + k).innerHTML = h;
+  }
+  function renderWeapons() { ['pm', 'pr', 'cw'].forEach(renderWeapon); }
+  function cleanW(w, ranged) {
+    const o = {
+      n: Math.max(0, Math.round(+w.n || 0)), die: Math.max(1, Math.round(+w.die || 1)), ench: Math.round(+w.ench || 0),
+      extras: w.extras.map((e) => ({ label: String(e.label || 'Danno extra'), n: Math.max(0, Math.round(+e.n || 0)), die: Math.max(1, Math.round(+e.die || 1)), bonus: Math.round(+e.bonus || 0), trigger: e.trigger || 'hit' }))
+    };
+    if (ranged) { o.abil = w.abil === 'dex' ? 'dex' : 'str'; o.normal = Math.max(5, Math.round(+w.normal || 30)); o.long = Math.max(o.normal, Math.round(+w.long || o.normal)); }
+    return o;
+  }
+  function weaponEvents() {
+    ['pm', 'pr', 'cw'].forEach((k) => {
+      const root = $('w_' + k);
+      root.addEventListener('input', (e) => {
+        const t = e.target, w = WS[k];
+        if (t.dataset.xf) { w.extras[+t.dataset.xi][t.dataset.xf] = t.type === 'number' ? t.value : t.value; }
+        else if (t.dataset.f) w[t.dataset.f] = t.type === 'number' ? t.value : t.value;
+        derived();
+      });
+      root.addEventListener('change', (e) => {
+        const t = e.target, w = WS[k], m = WMETA[k];
+        if (t.dataset.act === 'preset' && t.value !== '') {
+          const p = m.pre[+t.value];
+          w.n = p[1]; w.die = p[2];
+          if (m.ranged) { w.abil = p[3]; w.normal = p[4]; w.long = p[5]; }
+          renderWeapon(k); derived();
+        }
+      });
+      root.addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        const w = WS[k];
+        if (b.dataset.act === 'add') {
+          const p = EXTRA_PRE[+$('w_' + k + '_xpre').value];
+          w.extras.push({ label: p[0] === 'Personalizzato' ? 'Danno extra' : p[0], n: p[1], die: p[2], bonus: p[3], trigger: p[4] });
+          renderWeapon(k); derived();
+        } else if (b.dataset.act === 'del') {
+          w.extras.splice(+b.dataset.xi, 1); renderWeapon(k); derived();
+        }
+      });
+    });
+  }
+
+  function numField(prefix, key, label, val) {
+    const id = prefix + '_' + key;
+    return '<div class="field"><label for="' + id + '">' + label + '</label><input type="number" id="' + id + '" value="' + val + '" step="1"></div>';
+  }
+  function selField(prefix, key, label, opts, val) {
+    const id = prefix + '_' + key;
+    return '<div class="field wide"><label for="' + id + '">' + label + '</label><select id="' + id + '">' +
+      opts.map((o) => '<option value="' + o[0] + '"' + (String(o[0]) === String(val) ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></div>';
+  }
+  function chkField(prefix, key, label, sub, val) {
+    const id = prefix + '_' + key;
+    return '<label class="check"><input type="checkbox" id="' + id + '"' + (val ? ' checked' : '') + '><span>' + label + '<small>' + sub + '</small></span></label>';
+  }
+  function render() {
+    const P = DEF.pal, C = DEF.cle;
+    $('f_pal').innerHTML = PAL_STATS.map((f) => numField('p', f[0], f[1], P[f[0]])).join('');
+    $('s_pal').innerHTML = PAL_SEL.map((f) => selField('p', f[0], f[1], f[2], P[f[0]])).join('') +
+      PAL_NUM2.map((f) => numField('p', f[0], f[1], P[f[0]])).join('');
+    $('k_pal').innerHTML = PAL_CHK.map((f) => chkField('p', f[0], f[1], f[2], P[f[0]])).join('');
+    $('f_cle').innerHTML = CLE_STATS.map((f) => numField('c', f[0], f[1], C[f[0]])).join('');
+    $('s_cle').innerHTML = CLE_SEL.map((f) => selField('c', f[0], f[1], f[2], C[f[0]])).join('') +
+      CLE_NUM2.map((f) => numField('c', f[0], f[1], C[f[0]])).join('');
+    $('k_cle').innerHTML = CLE_CHK.map((f) => chkField('c', f[0], f[1], f[2], C[f[0]])).join('');
+    $('g_dist').value = DEF.dist; $('g_rounds').value = DEF.maxRounds;
+    WS = freshWeapons(); renderWeapons();
+    $('w_key').innerHTML = Object.keys(SWEEPS).map((k) => '<option value="' + k + '">' + SWEEPS[k].label + '</option>').join('');
+    derived();
+  }
+
+  // ----- lettura configurazione -----
+  const num = (id, fallback, lo, hi) => {
+    let v = parseFloat($(id).value);
+    if (isNaN(v)) v = fallback;
+    if (lo !== undefined) v = Math.max(lo, v);
+    if (hi !== undefined) v = Math.min(hi, v);
+    return v;
+  };
+  function readCfg() {
+    const cfg = JSON.parse(JSON.stringify(DEF));
+    PAL_STATS.forEach((f) => { cfg.pal[f[0]] = num('p_' + f[0], DEF.pal[f[0]]); });
+    PAL_NUM2.forEach((f) => { cfg.pal[f[0]] = num('p_' + f[0], DEF.pal[f[0]], 0, 100); });
+    PAL_SEL.forEach((f) => { const v = $('p_' + f[0]).value; cfg.pal[f[0]] = isNaN(Number(v)) ? v : Number(v); });
+    PAL_CHK.forEach((f) => { cfg.pal[f[0]] = $('p_' + f[0]).checked; });
+    CLE_STATS.forEach((f) => { cfg.cle[f[0]] = num('c_' + f[0], DEF.cle[f[0]]); });
+    CLE_NUM2.forEach((f) => { cfg.cle[f[0]] = num('c_' + f[0], DEF.cle[f[0]], 0, 100); });
+    CLE_SEL.forEach((f) => { cfg.cle[f[0]] = $('c_' + f[0]).value; });
+    CLE_CHK.forEach((f) => { cfg.cle[f[0]] = $('c_' + f[0]).checked; });
+    cfg.pal.melee = cleanW(WS.pm, false); cfg.pal.melee.n = Math.max(1, cfg.pal.melee.n);
+    cfg.pal.ranged = cleanW(WS.pr, true); cfg.pal.ranged.n = Math.max(1, cfg.pal.ranged.n);
+    cfg.cle.weapon = cleanW(WS.cw, false); cfg.cle.weapon.n = Math.max(1, cfg.cle.weapon.n);
+    cfg.dist = num('g_dist', 30, 5, 300);
+    cfg.maxRounds = Math.round(num('g_rounds', 30, 3, 100));
+    ['hp'].forEach((k) => { cfg.pal[k] = Math.max(1, cfg.pal[k]); cfg.cle[k] = Math.max(1, cfg.cle[k]); });
+    ['slot1', 'slot2'].forEach((k) => { cfg.pal[k] = Math.max(0, Math.round(cfg.pal[k])); });
+    ['slot1', 'slot2', 'slot3'].forEach((k) => { cfg.cle[k] = Math.max(0, Math.round(cfg.cle[k])); });
+    return cfg;
+  }
+  function derived() {
+    const c = readCfg(), p = c.pal, k = c.cle;
+    const mw = p.melee, atk = p.strMod + p.prof + mw.ench, bon = p.strMod + (p.style === 'duel' ? 2 : 0) + mw.ench;
+    const exTxt = (w) => w.extras.map((e) => ' + ' + (e.n ? e.n + 'd' + e.die : '') + (e.bonus ? sg(e.bonus) : '') + ' ' + e.label).join('');
+    const cw = k.weapon;
+    $('d_pal').innerHTML = '<span>Attacco ' + sg(atk) + '</span><span>Danni ' + mw.n + 'd' + mw.die + sg(bon) + exTxt(mw) + '</span><span>CA ' + (p.ac + (p.style === 'def' ? 1 : 0)) +
+      '</span><span>TS Sag ' + sg(p.wisMod + p.prof) + '</span><span>CD incantesimi ' + (8 + p.prof + p.chaMod) + '</span><span>Iniz. ' + sg(p.dexMod) + '</span>';
+    $('d_cle').innerHTML = '<span>Att. incantesimi ' + sg(k.wisMod + k.prof) + '</span><span>CA ' + k.ac + '</span><span>TS Sag ' + sg(k.wisMod + k.prof) +
+      '</span><span>CD incantesimi ' + (8 + k.prof + k.wisMod) + '</span><span>Iniz. ' + sg(k.dexMod) + '</span>' +
+      '<span>Arma ' + sg(k.strMod + k.prof + cw.ench) + ', ' + cw.n + 'd' + cw.die + sg(k.strMod + cw.ench) + exTxt(cw) + '</span>';
+    renderAnalytic(c);
+  }
+
+  // ----- risultati -----
+  let busy = false;
+  function setBusy(b) { busy = b; ['b_run', 'b_one', 'b_sweep'].forEach((i) => { $(i).disabled = b; }); }
+  const SMITE_NAMES = {};
+  function srcRows(o, el) {
+    const keys = Object.keys(o).sort((a, b) => o[b] - o[a]);
+    const mx = keys.length ? o[keys[0]] : 1;
+    el.innerHTML = (el === $('r_src_p') ? '<span class="lab">Il paladino infligge</span>' : '<span class="lab">Il chierico infligge</span>') +
+      (keys.length ? keys.map((k) => '<div class="src-row"><span>' + k + '</span><span class="t"><i style="width:' + (100 * o[k] / mx) + '%"></i></span><span class="n">' + fmt(o[k]) + '</span></div>').join('') : '<span class="note">Nessun danno inflitto.</span>');
+  }
+  function showResult(r, cfg) {
+    $('r_meta').textContent = r.n.toLocaleString('it-IT') + ' duelli · partenza a ' + cfg.dist + ' ft';
+    $('r_pp').textContent = fmt(r.pWin) + '%'; $('r_cp').textContent = fmt(r.cWin) + '%';
+    $('r_bar').innerHTML = '<div class="wl-p" style="width:' + r.pWin + '%">' + (r.pWin > 9 ? fmt(r.pWin) + '%' : '') + '</div>' +
+      (r.draw > 0 ? '<div class="wl-d" style="width:' + r.draw + '%"></div>' : '') +
+      '<div class="wl-c" style="width:' + r.cWin + '%">' + (r.cWin > 9 ? fmt(r.cWin) + '%' : '') + '</div>';
+    $('r_err').textContent = 'Margine di errore sul paladino: ±' + fmt(r.se * 1.96) + ' punti (intervallo al 95%).' + (r.draw > 0 ? ' Pareggi: ' + fmt(r.draw) + '%.' : '');
+    $('r_stats').innerHTML =
+      stat('Durata media', fmt(r.avgRounds, 2) + ' round') +
+      stat('PF residui, se vince il paladino', fmt(r.avgHpP, 1)) +
+      stat('PF residui, se vince il chierico', fmt(r.avgHpC, 1)) +
+      stat('Duelli con paladino paralizzato', fmt(r.paraPct) + '%') +
+      stat('Duelli con Voto di Inimicizia', fmt(r.vowPct) + '%');
+    const last = Math.max(4, r.hist.reduce((m, v, i) => (v > 0 ? i : m), 0));
+    const mx = Math.max.apply(null, r.hist.slice(1, last + 1).concat([1]));
+    let h = '', x = '';
+    for (let i = 1; i <= last; i++) {
+      const pct = 100 * r.hist[i] / r.n;
+      h += '<div class="col" title="Round ' + i + ': ' + fmt(pct) + '%"><i style="height:' + (100 * r.hist[i] / mx) + '%"></i></div>';
+      x += '<span>' + i + '</span>';
+    }
+    $('r_hist').innerHTML = h; $('r_histx').innerHTML = x;
+    srcRows(r.dmgP, $('r_src_p')); srcRows(r.dmgC, $('r_src_c'));
+  }
+  function stat(l, v) { return '<div class="stat"><span class="lab">' + l + '</span><span class="v">' + v + '</span></div>'; }
+
+  function runSim() {
+    if (busy) return;
+    const cfg = readCfg();
+    const n = Math.round(num('g_n', 10000, 1, 500000));
+    const seed = $('g_seed').value;
+    setBusy(true);
+    const b = newBatch(cfg, n, seed === '' ? null : Number(seed));
+    const chunk = Math.max(500, Math.round(n / 40));
+    (function tick() {
+      const done = stepBatch(b, chunk);
+      $('r_prog').style.width = (100 * b.done / b.n) + '%';
+      if (done) { showResult(batchResult(b), cfg); setBusy(false); setTimeout(() => { $('r_prog').style.width = '0'; }, 400); }
+      else setTimeout(tick, 0);
+    })();
+  }
+
+  function runOne() {
+    if (busy) return;
+    const cfg = readCfg();
+    const seed = $('g_seed').value;
+    const s = singleLog(cfg, seed === '' ? null : Number(seed));
+    let html = '';
+    s.lines.forEach((l) => {
+      const esc = l.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+      if (l.startsWith('---')) html += '<span class="rd">' + esc + '</span>';
+      else if (l.startsWith('Paladino (')) html += '<span class="tp">' + esc + '</span>';
+      else if (l.startsWith('Chierico (')) html += '<span class="tc">' + esc + '</span>';
+      else if (l.startsWith('VINCE') || l.startsWith('PAREGGIO')) html += '<span class="win">' + esc + '</span>';
+      else html += '<span class="ln">' + esc + '</span>\n';
+    });
+    $('log').innerHTML = html;
+    $('log').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ----- analisi -----
+  function renderAnalytic(cfg) {
+    const rows = analytic(cfg);
+    $('t_an').innerHTML = '<thead><tr><th>Opzione</th><th class="num">Colpire</th><th class="num">Danni/attacco</th><th class="num">Danni/round</th><th class="num">Almeno 1 colpo</th><th class="num">Round per 0 PF</th></tr></thead><tbody>' +
+      rows.map((r) => '<tr><td>' + r.name + '</td><td class="num">' + fmt(r.p, 0) + '%</td><td class="num">' + fmt(r.att, 1) + '</td><td class="num">' + fmt(r.rnd, 1) + '</td><td class="num">' + fmt(r.p1, 0) + '%</td><td class="num">' + fmt(r.rounds, 1) + '</td></tr>').join('') + '</tbody>';
+  }
+
+  // ----- confronti -----
+  function runSweep() {
+    if (busy) return;
+    const cfg = readCfg();
+    const key = $('w_key').value;
+    const sw = SWEEPS[key];
+    const nTot = Math.round(num('g_n', 10000, 1, 500000));
+    const n = Math.max(500, Math.min(nTot, 10000));
+    const seed = $('g_seed').value;
+    setBusy(true);
+    const rows = [];
+    let i = 0;
+    $('t_sw').innerHTML = '';
+    (function next() {
+      if (i >= sw.values.length) { setBusy(false); setTimeout(() => { $('w_prog').style.width = '0'; }, 400); return; }
+      const c = JSON.parse(JSON.stringify(cfg));
+      setPath(c, sw.path, sw.values[i]);
+      const r = runBatch(c, n, seed === '' ? null : Number(seed));
+      rows.push({ name: sw.names[sw.values[i]], r });
+      i++;
+      $('w_prog').style.width = (100 * i / sw.values.length) + '%';
+      drawSweep(sw, rows, n);
+      setTimeout(next, 0);
+    })();
+  }
+  function drawSweep(sw, rows, n) {
+    $('t_sw').innerHTML = '<thead><tr><th>' + sw.label + '</th><th>Esito</th><th class="num">Paladino</th><th class="num">Chierico</th><th class="num">Round medi</th></tr></thead><tbody>' +
+      rows.map((x) => '<tr><td>' + x.name + '</td><td><div class="mini"><i class="a" style="width:' + x.r.pWin + '%"></i><i class="c" style="width:' + x.r.draw + '%"></i><i class="b" style="width:' + x.r.cWin + '%"></i></div></td><td class="num">' + fmt(x.r.pWin) + '%</td><td class="num">' + fmt(x.r.cWin) + '%</td><td class="num">' + fmt(x.r.avgRounds, 2) + '</td></tr>').join('') +
+      '</tbody><caption style="caption-side:bottom;text-align:left;padding-top:8px;color:var(--muted);font-size:.9rem">' + n.toLocaleString('it-IT') + ' duelli per riga, margine di errore circa ±1 punto.</caption>';
+  }
+
+  // ----- eventi -----
+  document.addEventListener('input', (e) => { if (e.target.closest('.sheet') || e.target.id === 'g_dist' || e.target.id === 'g_rounds') derived(); });
+  $('b_run').addEventListener('click', runSim);
+  $('b_one').addEventListener('click', runOne);
+  $('b_sweep').addEventListener('click', runSweep);
+  $('b_reset').addEventListener('click', () => { render(); $('g_n').value = 10000; $('g_seed').value = ''; });
+
+  render();
+  weaponEvents();
+  runSim();
+})();
+</script>

@@ -1,0 +1,1183 @@
+<title>Duello D&D</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Alegreya+SC:wght@500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: due schede personaggio affiancate, poi comandi, risultati, confronti, log. */
+:root {
+  --bg: #eceff0; --surface: #ffffff; --surface2: #f4f6f7; --ink: #1b2124; --muted: #5a666b; --line: #d2d9dc;
+  --ember: #b8431c; --ember-soft: #f6e4dc; --grave: #1f7a72; --grave-soft: #dcefec; --draw: #9aa5aa;
+  --focus: #1b2124;
+  --f-display: 'Alegreya SC', 'Iowan Old Style', Georgia, serif;
+  --f-body: 'Alegreya Sans', 'Segoe UI', system-ui, sans-serif;
+  --f-mono: 'IBM Plex Mono', ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #121618; --surface: #1b2023; --surface2: #22292c; --ink: #e5eaec; --muted: #94a1a7; --line: #2d363a;
+    --ember: #e2794f; --ember-soft: #3a2118; --grave: #52b8ad; --grave-soft: #14312d; --draw: #6a767b; --focus: #e5eaec;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #121618; --surface: #1b2023; --surface2: #22292c; --ink: #e5eaec; --muted: #94a1a7; --line: #2d363a;
+  --ember: #e2794f; --ember-soft: #3a2118; --grave: #52b8ad; --grave-soft: #14312d; --draw: #6a767b; --focus: #e5eaec;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--f-body); font-size: 17px; line-height: 1.45;
+  padding-block: 20px 56px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1120px; margin: 0 auto; display: flex; flex-direction: column; gap: 22px; }
+h1, h2, h3 { font-family: var(--f-display); font-weight: 700; margin: 0; text-wrap: balance; letter-spacing: .01em; }
+h1 { font-size: clamp(2rem, 5vw, 2.9rem); line-height: 1.05; }
+h2 { font-size: 1.45rem; }
+h3 { font-size: 1.15rem; }
+p { margin: 0; }
+.lede { color: var(--muted); max-width: 62ch; margin-top: 8px; }
+.lab { font-size: .78rem; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 700; }
+.mono { font-family: var(--f-mono); font-variant-numeric: tabular-nums; }
+
+.sheets { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 18px; }
+.sheet { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; min-width: 0; }
+.sheet-h { padding: 14px 16px 12px; border-bottom: 3px solid var(--c); display: flex; flex-direction: column; gap: 2px; }
+.sheet.pal { --c: var(--ember); --soft: var(--ember-soft); }
+.sheet.cle { --c: var(--grave); --soft: var(--grave-soft); }
+.sheet-h .who { color: var(--c); font-family: var(--f-display); font-size: 1.5rem; font-weight: 700; line-height: 1.1; }
+.sheet-h .sub { color: var(--muted); }
+.derived { background: var(--soft); padding: 9px 16px; font-family: var(--f-mono); font-size: .8rem; display: flex; flex-wrap: wrap; gap: 4px 14px; }
+.grp { padding: 14px 16px; border-top: 1px solid var(--line); display: flex; flex-direction: column; gap: 10px; }
+.grp:first-of-type { border-top: 0; }
+.fields { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); gap: 10px 12px; }
+.field { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.field label { font-size: .82rem; color: var(--muted); line-height: 1.15; }
+.wide { grid-column: 1 / -1; }
+input[type="number"], input[type="text"], select {
+  font: inherit; font-family: var(--f-mono); font-size: .92rem; color: var(--ink); background: var(--surface2);
+  border: 1px solid var(--line); border-radius: 3px; padding: 6px 8px; width: 100%; min-width: 0; min-height: 36px;
+}
+select { font-family: var(--f-body); font-size: 1rem; }
+input:focus-visible, select:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+input[type="text"] { font-family: var(--f-body); font-size: 1rem; }
+.weapon { border: 1px solid var(--line); border-radius: 3px; padding: 10px 12px; background: var(--surface2); display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.weapon + .weapon { margin-top: 0; }
+.wh { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: space-between; }
+.wh b { font-family: var(--f-display); font-size: 1.05rem; color: var(--c); }
+.wh select { width: auto; max-width: 100%; min-height: 32px; padding: 3px 6px; }
+.weapon .fields { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); }
+.weapon input[type="number"], .weapon input[type="text"], .weapon select { background: var(--surface); }
+.xrows { display: flex; flex-direction: column; gap: 6px; }
+.xrow, .xhead { display: grid; grid-template-columns: minmax(0, 1.5fr) 58px 58px 58px minmax(0, 1.4fr) 36px; gap: 6px; align-items: center; }
+.xhead span { font-size: .72rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 700; }
+.xrow button { padding: 0; min-height: 36px; border-color: var(--line); color: var(--muted); }
+.xadd { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.xadd select { width: auto; flex: 1 1 200px; min-height: 36px; }
+.xadd button { min-height: 36px; padding: 4px 12px; }
+.checks { display: flex; flex-direction: column; gap: 6px; }
+.check { display: flex; gap: 9px; align-items: flex-start; font-size: .98rem; cursor: pointer; }
+.check input { margin-top: 4px; width: 17px; height: 17px; accent-color: var(--c); flex: none; }
+.check small { color: var(--muted); display: block; line-height: 1.25; }
+
+.bar { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 14px 16px; display: flex; flex-wrap: wrap; gap: 12px 18px; align-items: flex-end; }
+.bar .field { width: 130px; }
+.btns { display: flex; flex-wrap: wrap; gap: 8px; margin-left: auto; }
+button {
+  font: inherit; font-weight: 700; border-radius: 3px; border: 1px solid var(--ink); background: transparent; color: var(--ink);
+  padding: 8px 15px; min-height: 40px; cursor: pointer;
+}
+button.primary { background: var(--ink); color: var(--bg); }
+button:hover { opacity: .88; }
+button:disabled { opacity: .45; cursor: progress; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 18px; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.panel-h { display: flex; flex-wrap: wrap; gap: 4px 14px; align-items: baseline; justify-content: space-between; }
+.note { color: var(--muted); font-size: .92rem; }
+
+.wl { display: flex; flex-direction: column; gap: 8px; }
+.wl-bar { display: flex; height: 46px; border-radius: 3px; overflow: hidden; background: var(--surface2); }
+.wl-bar > div { display: flex; align-items: center; padding: 0 12px; color: #fff; font-family: var(--f-mono); font-weight: 500; white-space: nowrap; overflow: hidden; min-width: 0; }
+.wl-p { background: var(--ember); } .wl-c { background: var(--grave); justify-content: flex-end; } .wl-d { background: var(--draw); }
+.wl-names { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.wl-names b { font-family: var(--f-display); font-size: 1.1rem; }
+.wl-names .p { color: var(--ember); } .wl-names .c { color: var(--grave); }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.stat { background: var(--surface2); border-radius: 3px; padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+.stat .v { font-family: var(--f-mono); font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+.hist { display: flex; align-items: flex-end; gap: 3px; height: 130px; border-bottom: 1px solid var(--line); padding-top: 6px; }
+.hist .col { flex: 1; min-width: 0; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; height: 100%; gap: 3px; }
+.hist .col i { display: block; width: 100%; background: var(--ink); opacity: .78; border-radius: 2px 2px 0 0; min-height: 1px; }
+.hist-x { display: flex; gap: 3px; }
+.hist-x span { flex: 1; text-align: center; font-family: var(--f-mono); font-size: .72rem; color: var(--muted); min-width: 0; }
+.src { display: flex; flex-direction: column; gap: 6px; }
+.src-row { display: grid; grid-template-columns: minmax(0, 11rem) minmax(0, 1fr) 3.4rem; gap: 8px; align-items: center; font-size: .95rem; }
+.src-row .t { height: 14px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.src-row .t i { display: block; height: 100%; background: var(--c); }
+.src-row .n { font-family: var(--f-mono); font-size: .84rem; text-align: right; }
+
+.tablewrap { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: .95rem; }
+th { text-align: left; font-size: .76rem; text-transform: uppercase; letter-spacing: .07em; color: var(--muted); padding: 6px 10px 6px 0; border-bottom: 1px solid var(--line); white-space: nowrap; }
+td { padding: 8px 10px 8px 0; border-bottom: 1px solid var(--line); vertical-align: middle; }
+td.num, th.num { font-family: var(--f-mono); font-variant-numeric: tabular-nums; text-align: right; white-space: nowrap; }
+.mini { display: flex; height: 16px; min-width: 150px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.mini i { display: block; height: 100%; }
+.mini .a { background: var(--ember); } .mini .b { background: var(--grave); } .mini .c { background: var(--draw); }
+.sweep-ctl { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.sweep-ctl .field { flex: 1 1 260px; }
+
+.log { font-family: var(--f-mono); font-size: .84rem; line-height: 1.5; max-height: 460px; overflow: auto; background: var(--surface2); border-radius: 3px; padding: 12px 14px; white-space: pre-wrap; }
+.log .rd { display: block; margin-top: 8px; font-weight: 500; color: var(--ink); }
+.log .tp { display: block; color: var(--ember); margin-top: 4px; } .log .tc { display: block; color: var(--grave); margin-top: 4px; }
+.log .win { display: block; margin-top: 10px; font-family: var(--f-display); font-size: 1.1rem; font-weight: 700; }
+.log .ln { color: var(--ink); opacity: .86; }
+details.rules { background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 14px 18px; }
+details.rules summary { cursor: pointer; font-family: var(--f-display); font-weight: 700; font-size: 1.15rem; }
+details.rules ul { margin: 12px 0 0; padding-left: 1.2rem; display: flex; flex-direction: column; gap: 6px; }
+.prog { height: 4px; background: var(--surface2); border-radius: 2px; overflow: hidden; }
+.prog i { display: block; height: 100%; width: 0; background: var(--ink); transition: width .1s linear; }
+
+@media (max-width: 820px) {
+  .sheets, .two { grid-template-columns: minmax(0, 1fr); }
+  .btns { margin-left: 0; width: 100%; } .btns button { flex: 1 1 auto; }
+  .src-row { grid-template-columns: minmax(0, 8rem) minmax(0, 1fr) 3.2rem; }
+}
+@media (max-width: 520px) {
+  .xhead { display: none; }
+  .xrow { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .xrow > :first-child { grid-column: 1 / -1; }
+  .xrow > select { grid-column: 1 / 3; }
+}
+@media (prefers-reduced-motion: reduce) { .prog i { transition: none; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Duello D&amp;D</h1>
+    <p class="lede">Paladino della Vendetta (Firbolg) contro Chierico della Tomba (Halfling), 5ª edizione, livello 5. Regola le statistiche e le strategie, scegli quante volte combattere e leggi le medie.</p>
+  </header>
+
+  <section class="sheets" aria-label="Personaggi">
+    <div class="sheet pal">
+      <div class="sheet-h"><span class="who">Paladino</span><span class="sub">Giuramento della Vendetta · Firbolg</span></div>
+      <div class="derived" id="d_pal"></div>
+      <div class="grp"><span class="lab">Statistiche</span><div class="fields" id="f_pal"></div></div>
+      <div class="grp"><span class="lab">Armi</span><div id="w_pm" class="weapons"></div><div id="w_pr" class="weapons"></div><p class="note">Le armi a due mani non hanno uno stile dedicato: togli lo stile Duellante e il bonus dello scudo dalla CA.</p></div>
+      <div class="grp"><span class="lab">Strategia</span><div class="fields" id="s_pal"></div><div class="checks" id="k_pal"></div></div>
+    </div>
+    <div class="sheet cle">
+      <div class="sheet-h"><span class="who">Chierico</span><span class="sub">Dominio della Tomba · Halfling</span></div>
+      <div class="derived" id="d_cle"></div>
+      <div class="grp"><span class="lab">Statistiche</span><div class="fields" id="f_cle"></div></div>
+      <div class="grp"><span class="lab">Arma</span><div id="w_cw" class="weapons"></div><p class="note">Usata solo se scegli «Attacco con l'arma» come azione senza slot. L'Arma Spirituale non è influenzata dall'incantamento.</p></div>
+      <div class="grp"><span class="lab">Strategia</span><div class="fields" id="s_cle"></div><div class="checks" id="k_cle"></div></div>
+    </div>
+  </section>
+
+  <section class="bar" aria-label="Comandi">
+    <div class="field"><label for="g_dist">Distanza iniziale (ft)</label><input type="number" id="g_dist" value="30" min="5" max="300" step="5"></div>
+    <div class="field"><label for="g_rounds">Round massimi</label><input type="number" id="g_rounds" value="30" min="3" max="100"></div>
+    <div class="field"><label for="g_n">Numero di duelli</label><input type="number" id="g_n" value="10000" min="1" max="500000" step="1000"></div>
+    <div class="field"><label for="g_seed">Seed (facoltativo)</label><input type="number" id="g_seed" placeholder="casuale"></div>
+    <div class="btns">
+      <button class="primary" id="b_run">Simula</button>
+      <button id="b_one">Un solo duello</button>
+      <button id="b_reset">Valori iniziali</button>
+    </div>
+  </section>
+
+  <section class="panel" id="res" aria-live="polite">
+    <div class="panel-h"><h2>Risultati</h2><span class="note mono" id="r_meta"></span></div>
+    <div class="prog" aria-hidden="true"><i id="r_prog"></i></div>
+    <div class="wl">
+      <div class="wl-names"><b class="p">Paladino <span class="mono" id="r_pp"></span></b><b class="c"><span class="mono" id="r_cp"></span> Chierico</b></div>
+      <div class="wl-bar" id="r_bar"></div>
+      <p class="note" id="r_err"></p>
+    </div>
+    <div class="stats" id="r_stats"></div>
+    <div class="two">
+      <div><h3>Durata dei duelli</h3><p class="note">Quanti duelli finiscono al round indicato.</p><div class="hist" id="r_hist"></div><div class="hist-x" id="r_histx"></div></div>
+      <div>
+        <h3>Danni medi per duello, per fonte</h3>
+        <div class="src" id="r_src_p" style="--c: var(--ember); margin-top: 8px"></div>
+        <div class="src" id="r_src_c" style="--c: var(--grave); margin-top: 14px"></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-h"><h2>Probabilità e danni attesi del paladino</h2><span class="note">Calcolo esatto contro la CA del chierico, 2 attacchi per round</span></div>
+    <div class="tablewrap"><table id="t_an"></table></div>
+    <p class="note">La Punizione Divina si decide dopo aver visto il colpo, quindi non si spreca mai sui mancati. Vale solo in mischia.</p>
+  </section>
+
+  <section class="panel">
+    <div class="panel-h"><h2>Confronta strategie</h2><span class="note">Cambia una sola impostazione e tiene fermo il resto</span></div>
+    <div class="sweep-ctl">
+      <div class="field"><label for="w_key">Cosa confrontare</label><select id="w_key"></select></div>
+      <button id="b_sweep">Confronta</button>
+    </div>
+    <div class="prog" aria-hidden="true"><i id="w_prog"></i></div>
+    <div class="tablewrap"><table id="t_sw"></table></div>
+  </section>
+
+  <section class="panel">
+    <div class="panel-h"><h2>Cronaca di un duello</h2><span class="note">Premi «Un solo duello» per vederne uno round per round</span></div>
+    <div class="log" id="log">Nessun duello ancora.</div>
+  </section>
+
+  <details class="rules">
+    <summary>Regole modellate e semplificazioni</summary>
+    <ul>
+      <li>Combattimento 1 contro 1 fino a 0 PF, senza tiri salvezza contro morte. Il chierico resta fermo e non cerca di allontanarsi.</li>
+      <li>Paladino: Attacco Extra, Punizione Divina (solo mischia), Imposizione delle Mani, Voto di Inimicizia (vantaggio su tutti gli attacchi contro il chierico, serve essere entro 10 ft), Passo Nascosto del Firbolg (invisibile fino al primo attacco), Passo Velato, Marchio del Cacciatore, Marchio Infuocante, Scudo della Fede, Blocca Persona, Anatema, Benedizione. Competenza nei tiri salvezza di Saggezza e Carisma.</li>
+      <li>Chierico: Spirito Guardiano (danni all'inizio del turno del paladino se entro 15 ft e quando entra nell'area), Blocca Persona, Tocco Vampirico, Anatema, Benedizione, Arma Spirituale, Fiamma Sacra, Infliggi Ferite su bersaglio paralizzato (critico automatico), Cura Ferite, Sentiero verso la Tomba (il prossimo colpo contro il paladino infligge il doppio). Fortunato dell'halfling: ritira gli 1 naturali su attacchi, tiri salvezza e iniziativa.</li>
+      <li>Armi: l'incantamento (+N) si somma a colpire e ai danni. I danni aggiuntivi possono valere a ogni colpo, solo sul critico, al primo colpo di ogni turno o al primo colpo del duello. Sui critici i dadi si raddoppiano, tranne per l'effetto «solo critico». La Punizione Divina dipende dalla politica scelta: la modalità intelligente usa lo slot di 1° livello sui colpi normali e tiene quello di 2° per i critici e i colpi letali. Puoi anche tenere slot in riserva o smitare solo quando il chierico è sotto una certa percentuale di PF.</li>
+      <li>Concentrazione: ogni danno richiede un tiro salvezza su Costituzione (CD 10 o metà del danno). Essere paralizzato interrompe la concentrazione.</li>
+      <li>Non modellati: dimezzamento della velocità dentro Spirito Guardiano, riposi, oggetti magici, talenti, Raggio Indebolente e Sanctuary. L'Aura di Protezione arriva al livello 6.</li>
+      <li>A livello 5 il paladino non ha incantesimi offensivi a distanza. Per colpire da lontano usa un'arma, con Marchio Infuocante come bonus una tantum.</li>
+    </ul>
+  </details>
+</div>
+
+<script>
+// ============================================================================
+// MOTORE DI SIMULAZIONE - Paladino della Vendetta (Firbolg) vs Chierico della Tomba (Halfling)
+// D&D 5e, livello 5 di default. Tutto e' configurabile dall'oggetto cfg.
+// ============================================================================
+'use strict';
+
+// ---------- numeri casuali ----------
+let R = Math.random;
+function seedRng(seed) {
+  if (seed === null || seed === undefined || seed === '' || isNaN(Number(seed))) { R = Math.random; return; }
+  let a = (Number(seed) >>> 0) || 1;
+  R = function () {
+    a |= 0; a = (a + 0x6D2B79F5) | 0;
+    let t = Math.imul(a ^ (a >>> 15), 1 | a);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const d = (n, s) => { let t = 0; for (let i = 0; i < n; i++) t += 1 + Math.floor(R() * s); return t; };
+const d20raw = () => 1 + Math.floor(R() * 20);
+// d20 con eventuale Fortunato (Halfling: ritira i 1 naturali) e vantaggio/svantaggio
+function d20(lucky, mode) {
+  const one = () => { let r = d20raw(); if (lucky && r === 1) r = d20raw(); return r; };
+  if (mode === 1) return Math.max(one(), one());
+  if (mode === -1) return Math.min(one(), one());
+  return one();
+}
+
+// ---------- configurazione di default ----------
+// Arma: n dadi da "die" facce, ench = bonus magico a colpire e ai danni,
+// extras = danni aggiuntivi { label, n, die, bonus, trigger: hit | crit | turn | first }
+function defaults() {
+  return {
+    dist: 30, maxRounds: 30,
+    pal: {
+      // Firbolg: FOR 15+1, SAG 10+2. ASI al 4 in FOR. Competenza TS: SAG e CAR.
+      hp: 44, ac: 18, prof: 3, strMod: 4, dexMod: -1, conMod: 2, wisMod: 1, chaMod: 1,
+      style: 'duel', speed: 30, slot1: 4, slot2: 2, loh: 25, lohThr: 35, cd: 1, hiddenUses: 3,
+      melee: { n: 1, die: 8, ench: 0, extras: [] },
+      ranged: { n: 1, die: 6, abil: 'str', normal: 30, long: 120, ench: 0, extras: [] },
+      // strategia
+      smite: 'smart', smiteReserve: 0, smiteHpThr: 100, rangedRounds: 0,
+      vow: true, hidden: true, misty: true, actionSpell: 'none', bonusSpell: 'none'
+    },
+    cle: {
+      // Halfling (Piedelesto): DES+2, CAR+1. Tomba. ASI al 4 in SAG. Competenza TS: SAG e CAR.
+      hp: 38, ac: 18, prof: 3, wisMod: 4, dexMod: 2, conMod: 2, chaMod: 0, strMod: -1,
+      speed: 25, slot1: 4, slot2: 3, slot3: 2, healThr: 30, lucky: true, path: true, cd: 1,
+      opening: 'sg', noSlot: 'flame',
+      weapon: { n: 1, die: 6, ench: 0, extras: [] }
+    }
+  };
+}
+
+// ---------- un duello ----------
+function duel(cfg, log) {
+  const pc = cfg.pal, cc = cfg.cle;
+  const pal = {
+    hp: pc.hp, max: pc.hp, s1: pc.slot1, s2: pc.slot2, loh: pc.loh, cd: pc.cd, hid: pc.hiddenUses,
+    conc: null, para: false, vow: false, inv: false, brand: false, mark: false, acB: 0,
+    round: 0, rangedLast: false, paraRounds: 0, openDone: false, vowUsed: false, turnHit: false, firstHit: false
+  };
+  const cle = {
+    hp: cc.hp, max: cc.hp, s1: cc.slot1, s2: cc.slot2, s3: cc.slot3, cd: cc.cd,
+    conc: null, para: false, sw: 0, cursed: false, curseTurn: 0, turn: 0, holdTries: 0, turnHit: false, firstHit: false
+  };
+  let dist = cfg.dist;
+  const dmgP = {}, dmgC = {};
+  const add = (o, l, n) => { if (n > 0) o[l] = (o[l] || 0) + n; };
+  const say = log ? (m) => log(m) : null;
+
+  const MW = pc.melee, RW = pc.ranged, CW = cc.weapon;
+  const palAC = () => pc.ac + (pc.style === 'def' ? 1 : 0) + pal.acB;
+  const palAtk = pc.strMod + pc.prof + (MW.ench | 0);
+  const palDmgB = pc.strMod + (pc.style === 'duel' ? 2 : 0) + (MW.ench | 0);
+  const rMod = RW.abil === 'dex' ? pc.dexMod : pc.strMod;
+  const rAtk = rMod + pc.prof + (RW.ench | 0), rBon = rMod + (RW.ench | 0);
+  const palSv = { dex: pc.dexMod, con: pc.conMod, wis: pc.wisMod + pc.prof, cha: pc.chaMod + pc.prof };
+  const cleSv = { dex: cc.dexMod, con: cc.conMod, wis: cc.wisMod + cc.prof, cha: cc.chaMod + cc.prof };
+  const palDC = 8 + pc.prof + pc.chaMod, cleDC = 8 + cc.prof + cc.wisMod, cleAtk = cc.prof + cc.wisMod;
+  const cleWAtk = cc.strMod + cc.prof + (CW.ench | 0), cleWBon = cc.strMod + (CW.ench | 0);
+
+  const palBless = () => pal.conc === 'bless';
+  const palBane = () => cle.conc === 'bane';
+  const cleBless = () => cle.conc === 'bless';
+  const cleBane = () => pal.conc === 'bane';
+
+  function saveP(bonus, dc, autoFail) {
+    if (autoFail) return false;
+    const t = d20raw() + bonus + (palBless() ? d(1, 4) : 0) - (palBane() ? d(1, 4) : 0);
+    return t >= dc;
+  }
+  function saveC(bonus, dc, autoFail) {
+    if (autoFail) return false;
+    const t = d20(cc.lucky, 0) + bonus + (cleBless() ? d(1, 4) : 0) - (cleBane() ? d(1, 4) : 0);
+    return t >= dc;
+  }
+  function atkRoll(bonus, ac, adv, dis, lucky, bless, bane) {
+    const mode = adv && !dis ? 1 : (dis && !adv ? -1 : 0);
+    const r = lucky ? d20(true, mode) : d20(false, mode);
+    if (r === 1) return { hit: false, crit: false };
+    const tot = r + bonus + (bless ? d(1, 4) : 0) - (bane ? d(1, 4) : 0);
+    const crit = r === 20;
+    return { hit: crit || tot >= ac, crit };
+  }
+
+  // danni aggiuntivi dell'arma (fuoco, freddo, ecc.)
+  function weaponExtras(w, crit, st, dmgLog, parts) {
+    let tot = 0;
+    for (const e of (w.extras || [])) {
+      const n = Math.max(0, e.n | 0), faces = Math.max(1, e.die | 0), bonus = e.bonus | 0;
+      let apply = false, dbl = true;
+      if (e.trigger === 'crit') { apply = crit; dbl = false; }
+      else if (e.trigger === 'turn') apply = !st.turnHit;
+      else if (e.trigger === 'first') apply = !st.firstHit;
+      else apply = true;
+      if (!apply) continue;
+      const x = (n > 0 ? d(n * (crit && dbl ? 2 : 1), faces) : 0) + bonus;
+      if (x <= 0) continue;
+      add(dmgLog, e.label || 'Danno extra', x);
+      tot += x; if (parts) parts.push((e.label || 'extra') + ' ' + x);
+    }
+    st.turnHit = true; st.firstHit = true;
+    return tot;
+  }
+
+  function dropPalConc() {
+    if (pal.conc === 'hold') cle.para = false;
+    if (pal.conc === 'sof') pal.acB = 0;
+    pal.conc = null; pal.mark = false; pal.brand = false;
+  }
+  function dropCleConc() {
+    if (cle.conc === 'hold') pal.para = false;
+    cle.conc = null;
+  }
+  function hurtPal(n, label) {
+    if (n <= 0) return;
+    pal.hp -= n; if (label) add(dmgC, label, n);
+    if (pal.hp > 0 && pal.conc) {
+      if (!saveP(palSv.con, Math.max(10, Math.floor(n / 2)), false)) {
+        if (say) say('   Il paladino perde la concentrazione.');
+        dropPalConc();
+      }
+    }
+  }
+  function hurtCle(n) {
+    if (n <= 0) return;
+    cle.hp -= n;
+    if (cle.hp > 0 && cle.conc) {
+      if (!saveC(cleSv.con, Math.max(10, Math.floor(n / 2)), false)) {
+        if (say) say('   Il chierico perde la concentrazione.');
+        dropCleConc();
+      }
+    }
+  }
+  function sg(quando) {
+    let dmg = d(3, 8);
+    const ok = saveP(palSv.wis, cleDC, false);
+    if (ok) dmg = Math.floor(dmg / 2);
+    hurtPal(dmg, 'Spirito Guardiano');
+    if (say) say(`   Spirito Guardiano (${quando}): ${dmg} danni (TS ${ok ? 'riuscito' : 'fallito'}).`);
+  }
+
+  // Scelta dello slot di Punizione Divina. "tot" = danni gia' inflitti con questo colpo.
+  function smiteSlot(crit, tot) {
+    if (pc.smite === 'never') return 0;
+    if (cle.hp > cle.max * (pc.smiteHpThr === undefined ? 100 : pc.smiteHpThr) / 100) return 0;
+    if (pal.s1 + pal.s2 <= (pc.smiteReserve | 0)) return 0;
+    const lv = [];
+    if (pal.s1 > 0) lv.push(1);
+    if (pal.s2 > 0) lv.push(2);
+    if (!lv.length) return 0;
+    const lo = Math.min.apply(null, lv), hi = Math.max.apply(null, lv);
+    switch (pc.smite) {
+      case 'always': return lo;
+      case 'always_high': return hi;
+      case 'crit': return crit ? hi : 0;
+      case 'lvl1': return pal.s1 > 0 ? 1 : 0;
+      case 'lvl2': return pal.s2 > 0 ? 2 : 0;
+      case 'smart': {
+        // critico: slot piu' alto. Altrimenti slot 1 sui colpi normali; lo slot 2 solo se il colpo e' letale.
+        if (crit) return hi;
+        const lethal = lv.filter((l) => tot + (1 + l) * 4.5 >= cle.hp);
+        if (lethal.length) return Math.min.apply(null, lethal);
+        return pal.s1 > 0 ? 1 : 0;
+      }
+      default: return 0;
+    }
+  }
+
+  // --------------------------------------------------------------- PALADINO
+  function palTurn() {
+    const start = dist;
+    if (cle.conc === 'sg' && dist <= 15) { sg('inizio turno'); if (pal.hp <= 0) return; }
+    if (pal.para) {
+      pal.paraRounds++;
+      if (say) say('   Il paladino e\' paralizzato: perde il turno.');
+      if (saveP(palSv.wis, cleDC, false)) {
+        pal.para = false; cle.conc = null;
+        if (say) say('   Il paladino si libera da Blocca Persona.');
+      }
+      return;
+    }
+    if (pal.hp <= pal.max * pc.lohThr / 100 && pal.loh > 0) {
+      const h = Math.min(pal.loh, pal.max - pal.hp);
+      pal.hp += h; pal.loh -= h;
+      if (say) say(`   Imposizione delle Mani: +${h} PF (PF ${pal.hp}).`);
+      return;
+    }
+    pal.round++; pal.turnHit = false;
+    let action = true, bonus = true, dashed = false;
+
+    // Incantesimo d'apertura con l'azione (una volta per duello)
+    if (pc.actionSpell !== 'none' && !pal.openDone && !pal.conc && dist <= 60 && !cle.para) {
+      const sp = pc.actionSpell, lv = sp === 'hold' ? 2 : 1;
+      if ((lv === 2 ? pal.s2 : pal.s1) > 0) {
+        if (lv === 2) pal.s2--; else pal.s1--;
+        action = false; pal.openDone = true;
+        if (sp === 'hold') {
+          if (!saveC(cleSv.wis, palDC, false)) {
+            cle.para = true; dropCleConc(); pal.conc = 'hold';
+            if (say) say('   Blocca Persona: il chierico e\' PARALIZZATO.');
+          } else if (say) say('   Blocca Persona: il chierico resiste.');
+        } else if (sp === 'bane') {
+          if (!saveC(cleSv.cha, palDC, false)) {
+            pal.conc = 'bane'; if (say) say('   Anatema: il chierico e\' maledetto.');
+          } else if (say) say('   Anatema: il chierico resiste.');
+        } else if (sp === 'bless') {
+          pal.conc = 'bless'; if (say) say('   Benedizione sul paladino.');
+        }
+      }
+    }
+
+    // Avvicinamento
+    const rangedPhase = pal.round <= pc.rangedRounds && dist > 5;
+    pal.rangedLast = false;
+    let attackType = null;
+    if (rangedPhase && dist <= RW.long) {
+      attackType = 'ranged'; pal.rangedLast = true;
+    } else {
+      let need = dist - 5;
+      if (need > 0) {
+        const sp = pc.speed;
+        if (need > sp && pc.misty && bonus && pal.s2 > 0 && need <= sp + 30) {
+          pal.s2--; bonus = false; dist -= 30; need = dist - 5;
+          if (say) say('   Passo Velato: si teletrasporta di 30 ft.');
+        }
+        dist -= Math.min(sp, need); need = dist - 5;
+        if (need > 0 && action) {
+          action = false; dashed = true;
+          dist -= Math.min(sp, need); need = dist - 5;
+          if (say) say('   Scatto verso il chierico.');
+        }
+        if (cle.conc === 'sg' && start > 15 && dist <= 15) { sg('ingresso nell\'area'); if (pal.hp <= 0) return; }
+      }
+      if (dist <= 5 && action) attackType = 'melee';
+    }
+
+    // Azioni bonus
+    if (bonus && pc.vow && pal.cd > 0 && !pal.vow && dist <= 10) {
+      pal.cd--; pal.vow = true; pal.vowUsed = true; bonus = false;
+      if (say) say('   Voto di Inimicizia: vantaggio su tutti gli attacchi contro il chierico.');
+    }
+    if (bonus && pc.hidden && pal.hid > 0 && !pal.inv && !pal.vow && (dashed || attackType)) {
+      pal.hid--; pal.inv = true; bonus = false;
+      if (say) say('   Passo Nascosto: il paladino diventa invisibile.');
+    }
+    if (bonus && pc.bonusSpell !== 'none' && !pal.conc) {
+      const lv = pc.bonusSpell === 'branding' ? 2 : 1;
+      if ((lv === 2 ? pal.s2 : pal.s1) > 0) {
+        if (lv === 2) pal.s2--; else pal.s1--;
+        bonus = false;
+        if (pc.bonusSpell === 'hm') { pal.conc = 'hm'; pal.mark = true; if (say) say('   Marchio del Cacciatore sul chierico.'); }
+        if (pc.bonusSpell === 'branding') { pal.conc = 'branding'; pal.brand = true; if (say) say('   Marchio Infuocante preparato.'); }
+        if (pc.bonusSpell === 'sof') { pal.conc = 'sof'; pal.acB = 2; if (say) say('   Scudo della Fede: CA +2.'); }
+      }
+    }
+
+    // Attacchi (Attacco Extra)
+    if (action && attackType) {
+      const melee = attackType === 'melee';
+      const W = melee ? MW : RW;
+      for (let i = 0; i < 2; i++) {
+        if (cle.hp <= 0) break;
+        const adv = pal.vow || pal.inv || cle.para;
+        const dis = !melee && (dist <= 5 || dist > RW.normal);
+        const ar = atkRoll(melee ? palAtk : rAtk, cc.ac, adv, dis, false, palBless(), palBane());
+        pal.inv = false;
+        if (!ar.hit) { if (say) say(`   Attacco ${i + 1} (${melee ? 'mischia' : 'distanza'}): mancato.`); continue; }
+        const crit = ar.crit || (cle.para && dist <= 5);
+        const base = d((W.n | 0) * (crit ? 2 : 1), W.die | 0) + (melee ? palDmgB : rBon);
+        add(dmgP, 'Arma', base);
+        let tot = base; const parts = [`arma ${base}`];
+        tot += weaponExtras(W, crit, pal, dmgP, parts);
+        if (pal.mark) { const x = d(crit ? 2 : 1, 6); add(dmgP, 'Marchio del Cacciatore', x); tot += x; parts.push(`marchio ${x}`); }
+        if (pal.brand) { const x = d(crit ? 4 : 2, 6); pal.brand = false; add(dmgP, 'Marchio Infuocante', x); tot += x; parts.push(`infuocante ${x}`); }
+        if (melee) {
+          const lv = smiteSlot(crit, tot);
+          if (lv) {
+            if (lv === 1) pal.s1--; else pal.s2--;
+            const x = d((1 + lv) * (crit ? 2 : 1), 8);
+            add(dmgP, 'Punizione Divina', x); tot += x; parts.push(`smite lv${lv} ${x}`);
+          }
+        }
+        hurtCle(tot);
+        if (say) say(`   Attacco ${i + 1} (${melee ? 'mischia' : 'distanza'}): ${crit ? 'CRITICO ' : ''}${tot} danni (${parts.join(', ')}). Chierico a ${Math.max(0, cle.hp)} PF.`);
+      }
+    }
+  }
+
+  // --------------------------------------------------------------- CHIERICO
+  function cleTurn() {
+    cle.turn++; cle.turnHit = false;
+    if (cle.para) {
+      if (say) say('   Il chierico e\' paralizzato: perde il turno.');
+      if (saveC(cleSv.wis, palDC, false)) {
+        cle.para = false; pal.conc = null;
+        if (say) say('   Il chierico si libera da Blocca Persona.');
+      }
+      return;
+    }
+    const canT = !pal.inv;
+    let slotAct = false, acted = false;
+    const reach = dist <= cc.speed + 5;
+
+    if (cle.conc === 'sg' && dist > 15 && pal.rangedLast) dropCleConc();
+
+    function vtAttack() {
+      if (dist > 5) dist = 5;
+      const ar = atkRoll(cleAtk, palAC(), pal.para, false, cc.lucky, cleBless(), cleBane());
+      if (!ar.hit) { if (say) say('   Tocco Vampirico: mancato.'); return; }
+      const crit = ar.crit || pal.para;
+      let dmg = d(crit ? 6 : 3, 6);
+      if (cle.cursed) { dmg *= 2; cle.cursed = false; if (say) say('   (Sentiero verso la Tomba: danni raddoppiati)'); }
+      hurtPal(dmg, 'Tocco Vampirico');
+      const heal = Math.floor(dmg / 2);
+      cle.hp = Math.min(cle.max, cle.hp + heal);
+      if (say) say(`   Tocco Vampirico: ${crit ? 'CRITICO ' : ''}${dmg} danni, il chierico recupera ${heal} PF.`);
+    }
+    function weaponAttack() {
+      if (dist > 5) dist = 5;
+      const ar = atkRoll(cleWAtk, palAC(), pal.para, false, cc.lucky, cleBless(), cleBane());
+      if (!ar.hit) { if (say) say('   Attacco con l\'arma: mancato.'); return; }
+      const crit = ar.crit || pal.para;
+      const base = Math.max(0, d((CW.n | 0) * (crit ? 2 : 1), CW.die | 0) + cleWBon);
+      const parts = [`arma ${base}`];
+      add(dmgC, 'Arma del chierico', base);
+      let tot = base + weaponExtras(CW, crit, cle, dmgC, parts);
+      if (cle.cursed) {
+        add(dmgC, 'Sentiero verso la Tomba (raddoppio)', tot);
+        tot *= 2; cle.cursed = false; parts.push('raddoppiato dal Sentiero');
+      }
+      hurtPal(tot, null);
+      if (say) say(`   Attacco con l'arma: ${crit ? 'CRITICO ' : ''}${tot} danni (${parts.join(', ')}).`);
+    }
+
+    // 1) concentrazione di apertura
+    if (!cle.conc) {
+      const op = cc.opening;
+      const far = pal.rangedLast && dist > 15;
+      let kind = op;
+      if (op === 'sg' && far) kind = 'hold';
+      if (kind === 'sg' && cle.s3 > 0) {
+        cle.s3--; cle.conc = 'sg'; acted = true; slotAct = true;
+        if (say) say('   Spirito Guardiano evocato.');
+      } else if (kind === 'hold' && cle.s2 > 0 && canT && dist <= 60 && cle.holdTries < 2) {
+        cle.s2--; cle.holdTries++; acted = true; slotAct = true;
+        if (!saveP(palSv.wis, cleDC, false)) {
+          pal.para = true; cle.conc = 'hold'; dropPalConc();
+          if (say) say('   Blocca Persona: il paladino e\' PARALIZZATO.');
+        } else if (say) say('   Blocca Persona: il paladino resiste.');
+      } else if (kind === 'vt' && cle.s3 > 0 && canT && reach) {
+        cle.s3--; cle.conc = 'vt'; acted = true; slotAct = true;
+        if (say) say('   Tocco Vampirico lanciato.');
+        vtAttack();
+      } else if (kind === 'bane' && cle.s1 > 0 && canT && dist <= 30) {
+        cle.s1--; acted = true; slotAct = true;
+        if (!saveP(palSv.cha, cleDC, false)) {
+          cle.conc = 'bane'; if (say) say('   Anatema: il paladino e\' maledetto.');
+        } else if (say) say('   Anatema: il paladino resiste.');
+      } else if (kind === 'bless' && cle.s1 > 0) {
+        cle.s1--; cle.conc = 'bless'; acted = true; slotAct = true;
+        if (say) say('   Benedizione sul chierico.');
+      }
+    }
+    // 2) paladino paralizzato: Infliggi Ferite (critico automatico)
+    if (!acted && pal.para && canT && reach && (cle.s1 + cle.s2 + cle.s3) > 0) {
+      const lv = cle.s1 > 0 ? 1 : (cle.s2 > 0 ? 2 : 3);
+      if (lv === 1) cle.s1--; else if (lv === 2) cle.s2--; else cle.s3--;
+      if (dist > 5) dist = 5;
+      let dmg = d((2 + lv) * 2, 10);
+      if (cle.cursed) { dmg *= 2; cle.cursed = false; if (say) say('   (Sentiero verso la Tomba: danni raddoppiati)'); }
+      hurtPal(dmg, 'Infliggi Ferite');
+      acted = true; slotAct = true;
+      if (say) say(`   Infliggi Ferite lv${lv} su paladino paralizzato: CRITICO ${dmg} danni.`);
+    }
+    // 3) Tocco Vampirico continuato
+    if (!acted && cle.conc === 'vt' && canT && reach) { vtAttack(); acted = true; }
+    // 4) cura
+    if (!acted && cle.hp <= cle.max * cc.healThr / 100 && (cle.s1 + cle.s2 + cle.s3) > 0) {
+      const lv = cle.s1 > 0 ? 1 : (cle.s2 > 0 ? 2 : 3);
+      if (lv === 1) cle.s1--; else if (lv === 2) cle.s2--; else cle.s3--;
+      const h = d(lv, 8) + cc.wisMod;
+      cle.hp = Math.min(cle.max, cle.hp + h);
+      acted = true; slotAct = true;
+      if (say) say(`   Cura Ferite lv${lv}: +${h} PF (PF ${cle.hp}).`);
+    }
+    // 5) Sentiero verso la Tomba (Incanalare Divinita')
+    if (!acted && cc.path && cle.cd > 0 && !cle.cursed && !pal.para && canT && dist <= 30
+        && (cle.sw > 0 || cle.conc === 'vt')) {
+      cle.cd--; cle.cursed = true; cle.curseTurn = cle.turn + 1; acted = true;
+      if (say) say('   Sentiero verso la Tomba: il prossimo colpo contro il paladino infligge il doppio.');
+    }
+    // 6) azione senza slot: arma oppure Fiamma Sacra
+    if (!acted && canT && cc.noSlot === 'weapon' && reach) { weaponAttack(); acted = true; }
+    if (!acted && canT && dist <= 60) {
+      const ok = saveP(palSv.dex, cleDC, pal.para);
+      if (!ok) {
+        const x = d(2, 8); hurtPal(x, 'Fiamma Sacra');
+        if (say) say(`   Fiamma Sacra: ${x} danni.`);
+      } else if (say) say('   Fiamma Sacra: il paladino evita.');
+      acted = true;
+    }
+    if (pal.hp <= 0) return;
+
+    // Azione bonus: Arma Spirituale
+    if (cle.sw > 0) {
+      cle.sw--;
+      const ar = atkRoll(cleAtk, palAC(), pal.para, pal.inv, cc.lucky, cleBless(), cleBane());
+      if (ar.hit) {
+        const crit = ar.crit || pal.para;
+        let dmg = d(crit ? 2 : 1, 8) + cc.wisMod;
+        if (cle.cursed) { dmg *= 2; cle.cursed = false; if (say) say('   (Sentiero verso la Tomba: danni raddoppiati)'); }
+        hurtPal(dmg, 'Arma Spirituale');
+        if (say) say(`   Arma Spirituale: ${crit ? 'CRITICO ' : ''}${dmg} danni.`);
+      } else if (say) say('   Arma Spirituale: mancato.');
+    } else if (!slotAct && cle.s2 > 0 && dist <= 60) {
+      cle.s2--; cle.sw = 10;
+      if (say) say('   Arma Spirituale evocata.');
+    }
+    if (cle.cursed && cle.turn >= cle.curseTurn) cle.cursed = false;
+  }
+
+  // ------------------------------------------------------------ iniziativa
+  const iP = d20raw() + pc.dexMod, iC = d20(cc.lucky, 0) + cc.dexMod;
+  const palFirst = iP === iC ? R() < 0.5 : iP > iC;
+  const order = palFirst ? ['P', 'C'] : ['C', 'P'];
+  if (say) say(`Iniziativa: paladino ${iP}, chierico ${iC}. Parte il ${palFirst ? 'paladino' : 'chierico'}. Distanza ${dist} ft.`);
+
+  for (let rnd = 1; rnd <= cfg.maxRounds; rnd++) {
+    if (say) say(`--- Round ${rnd} ---`);
+    for (const who of order) {
+      if (say) say(`${who === 'P' ? 'Paladino' : 'Chierico'} (PF ${pal.hp} / ${cle.hp}, distanza ${dist} ft)`);
+      if (who === 'P') palTurn(); else cleTurn();
+      if (pal.hp <= 0) return { winner: 'C', rounds: rnd, hpLeft: cle.hp, dmgP, dmgC, paraRounds: pal.paraRounds, vowUsed: pal.vowUsed };
+      if (cle.hp <= 0) return { winner: 'P', rounds: rnd, hpLeft: pal.hp, dmgP, dmgC, paraRounds: pal.paraRounds, vowUsed: pal.vowUsed };
+    }
+  }
+  return { winner: 'D', rounds: cfg.maxRounds, hpLeft: 0, dmgP, dmgC, paraRounds: pal.paraRounds, vowUsed: pal.vowUsed };
+}
+
+// ---------- batch di duelli ----------
+function newBatch(cfg, n, seed) {
+  seedRng(seed);
+  return {
+    cfg, n, done: 0, wins: { P: 0, C: 0, D: 0 }, hist: new Array(cfg.maxRounds + 1).fill(0),
+    sumRounds: 0, sumHpP: 0, sumHpC: 0, dmgP: {}, dmgC: {}, sumPara: 0, paraDuels: 0, vowDuels: 0
+  };
+}
+function stepBatch(b, k) {
+  const end = Math.min(b.n, b.done + k);
+  for (; b.done < end; b.done++) {
+    const r = duel(b.cfg);
+    b.wins[r.winner]++;
+    b.hist[Math.min(r.rounds, b.cfg.maxRounds)]++;
+    b.sumRounds += r.rounds;
+    if (r.winner === 'P') b.sumHpP += r.hpLeft;
+    if (r.winner === 'C') b.sumHpC += r.hpLeft;
+    for (const k2 in r.dmgP) b.dmgP[k2] = (b.dmgP[k2] || 0) + r.dmgP[k2];
+    for (const k2 in r.dmgC) b.dmgC[k2] = (b.dmgC[k2] || 0) + r.dmgC[k2];
+    b.sumPara += r.paraRounds; if (r.paraRounds > 0) b.paraDuels++;
+    if (r.vowUsed) b.vowDuels++;
+  }
+  return b.done >= b.n;
+}
+function batchResult(b) {
+  const n = b.done || 1;
+  const avg = (o) => { const r = {}; for (const k in o) r[k] = o[k] / n; return r; };
+  return {
+    n: b.done,
+    pWin: 100 * b.wins.P / n, cWin: 100 * b.wins.C / n, draw: 100 * b.wins.D / n,
+    avgRounds: b.sumRounds / n,
+    avgHpP: b.wins.P ? b.sumHpP / b.wins.P : 0,
+    avgHpC: b.wins.C ? b.sumHpC / b.wins.C : 0,
+    hist: b.hist.slice(), dmgP: avg(b.dmgP), dmgC: avg(b.dmgC),
+    paraPct: 100 * b.paraDuels / n, avgPara: b.sumPara / n, vowPct: 100 * b.vowDuels / n,
+    se: 100 * Math.sqrt((b.wins.P / n) * (1 - b.wins.P / n) / n)
+  };
+}
+function runBatch(cfg, n, seed) {
+  const b = newBatch(cfg, n, seed);
+  stepBatch(b, n);
+  return batchResult(b);
+}
+function singleLog(cfg, seed) {
+  seedRng(seed);
+  const lines = [];
+  const r = duel(cfg, (m) => lines.push(m));
+  lines.push(r.winner === 'P' ? 'VINCE IL PALADINO' : (r.winner === 'C' ? 'VINCE IL CHIERICO' : 'PAREGGIO (limite di round)'));
+  return { lines, result: r };
+}
+
+// ---------- confronti automatici ----------
+const SWEEPS = {
+  smite: { label: 'Politica di Punizione Divina', path: 'pal.smite',
+    values: ['never', 'lvl1', 'lvl2', 'always', 'always_high', 'crit', 'smart'],
+    names: { never: 'Mai', lvl1: 'Solo slot 1°', lvl2: 'Solo slot 2°', always: 'Slot più basso, ogni colpo', always_high: 'Slot più alto, ogni colpo', crit: 'Solo sui critici', smart: 'Intelligente (slot 2° solo se letale o critico)' } },
+  reserve: { label: 'Slot di Punizione Divina tenuti in riserva', path: 'pal.smiteReserve', values: [0, 1, 2, 3, 4],
+    names: { 0: 'Nessuna riserva', 1: '1 slot', 2: '2 slot', 3: '3 slot', 4: '4 slot' } },
+  hpthr: { label: 'Punizione solo se i PF del chierico sono sotto', path: 'pal.smiteHpThr', values: [100, 75, 50, 30],
+    names: { 100: 'Sempre', 75: '75% dei PF', 50: '50% dei PF', 30: '30% dei PF' } },
+  ench: { label: 'Incantamento dell\'arma da mischia del paladino', path: 'pal.melee.ench', values: [0, 1, 2, 3],
+    names: { 0: 'Arma normale', 1: '+1', 2: '+2', 3: '+3' } },
+  cleWeapon: { label: 'Azione del chierico senza slot', path: 'cle.noSlot', values: ['flame', 'weapon'],
+    names: { flame: 'Fiamma Sacra', weapon: 'Attacco con l\'arma' } },
+  dist: { label: 'Distanza iniziale', path: 'dist', values: [5, 15, 30, 60, 90],
+    names: { 5: '5 ft', 15: '15 ft', 30: '30 ft', 60: '60 ft', 90: '90 ft' } },
+  ranged: { label: 'Round di attacco a distanza prima di caricare', path: 'pal.rangedRounds', values: [0, 1, 2, 3, 99],
+    names: { 0: 'Carica subito', 1: '1 round', 2: '2 round', 3: '3 round', 99: 'Sempre a distanza' } },
+  bonusSpell: { label: 'Incantesimo del paladino con azione bonus', path: 'pal.bonusSpell',
+    values: ['none', 'hm', 'branding', 'sof'],
+    names: { none: 'Nessuno', hm: 'Marchio del Cacciatore', branding: 'Marchio Infuocante', sof: 'Scudo della Fede' } },
+  actionSpell: { label: 'Incantesimo d\'apertura del paladino (azione)', path: 'pal.actionSpell',
+    values: ['none', 'hold', 'bane', 'bless'],
+    names: { none: 'Nessuno', hold: 'Blocca Persona', bane: 'Anatema', bless: 'Benedizione' } },
+  vow: { label: 'Voto di Inimicizia', path: 'pal.vow', values: [false, true], names: { false: 'No', true: 'Sì' } },
+  hidden: { label: 'Passo Nascosto del Firbolg', path: 'pal.hidden', values: [false, true], names: { false: 'No', true: 'Sì' } },
+  misty: { label: 'Passo Velato', path: 'pal.misty', values: [false, true], names: { false: 'No', true: 'Sì' } },
+  opening: { label: 'Apertura del chierico', path: 'cle.opening', values: ['sg', 'hold', 'vt', 'bane', 'bless'],
+    names: { sg: 'Spirito Guardiano', hold: 'Blocca Persona', vt: 'Tocco Vampirico', bane: 'Anatema', bless: 'Benedizione' } },
+  path: { label: 'Sentiero verso la Tomba', path: 'cle.path', values: [false, true], names: { false: 'No', true: 'Sì' } }
+};
+function setPath(obj, path, val) {
+  const p = path.split('.');
+  let o = obj;
+  for (let i = 0; i < p.length - 1; i++) o = o[p[i]];
+  o[p[p.length - 1]] = val;
+}
+function sweepRun(cfg, key, n, seed, onRow) {
+  const sw = SWEEPS[key], rows = [];
+  for (const v of sw.values) {
+    const c = JSON.parse(JSON.stringify(cfg));
+    setPath(c, sw.path, v);
+    const r = runBatch(c, n, seed);
+    const row = { name: sw.names[v], pWin: r.pWin, cWin: r.cWin, draw: r.draw, avgRounds: r.avgRounds, se: r.se };
+    rows.push(row);
+    if (onRow) onRow(row);
+  }
+  return rows;
+}
+
+// ---------- analisi esatta (probabilita' per round del paladino) ----------
+function pHit(atk, ac, adv, dis) {
+  const p = Math.min(0.95, Math.max(0.05, (21 - (ac - atk)) / 20));
+  if (adv && !dis) return 1 - (1 - p) * (1 - p);
+  if (dis && !adv) return p * p;
+  return p;
+}
+function analytic(cfg) {
+  const pc = cfg.pal, cc = cfg.cle, MW = pc.melee, RW = pc.ranged;
+  const ex = (w, p, pcrit, p1) => {
+    let t = 0;
+    for (const e of (w.extras || [])) {
+      const dice = (e.n | 0) * ((e.die | 0) + 1) / 2, avg = dice + (e.bonus | 0);
+      if (e.trigger === 'crit') t += pcrit * avg;
+      else if (e.trigger === 'turn' || e.trigger === 'first') t += p1 * avg / 2;
+      else t += p * avg + pcrit * dice;
+    }
+    return t;
+  };
+  const rows = [];
+  function row(name, atk, w, bonus, smiteDice, adv, dis) {
+    const p = pHit(atk, cc.ac, adv, dis);
+    const pcrit = adv && !dis ? 1 - 0.95 * 0.95 : (dis && !adv ? 0.0025 : 0.05);
+    const p1 = 1 - (1 - p) * (1 - p);
+    const wd = (w.n | 0) * ((w.die | 0) + 1) / 2;
+    const att = p * (wd + bonus) + pcrit * wd + ex(w, p, pcrit, p1) + (p + pcrit) * smiteDice;
+    const rnd = att * 2;
+    rows.push({ name, p: p * 100, att, rnd, p1: p1 * 100, rounds: cc.hp / rnd });
+  }
+  const mAtk = pc.strMod + pc.prof + (MW.ench | 0);
+  const mBon = pc.strMod + (pc.style === 'duel' ? 2 : 0) + (MW.ench | 0);
+  const rMod = RW.abil === 'dex' ? pc.dexMod : pc.strMod;
+  const rAtk = rMod + pc.prof + (RW.ench | 0), rBon = rMod + (RW.ench | 0);
+  row('Arma da mischia, senza smite', mAtk, MW, mBon, 0, false, false);
+  row('Arma da mischia con vantaggio (Voto di Inimicizia)', mAtk, MW, mBon, 0, true, false);
+  row('Mischia + Punizione lv 1', mAtk, MW, mBon, 9, false, false);
+  row('Mischia + Punizione lv 2', mAtk, MW, mBon, 13.5, false, false);
+  row('Mischia con vantaggio + Punizione lv 1', mAtk, MW, mBon, 9, true, false);
+  row('Mischia con vantaggio + Punizione lv 2', mAtk, MW, mBon, 13.5, true, false);
+  row('Arma a distanza, gittata normale', rAtk, RW, rBon, 0, false, false);
+  row('Arma a distanza, gittata lunga (svantaggio)', rAtk, RW, rBon, 0, false, true);
+  return rows;
+}
+
+if (typeof module !== 'undefined') {
+  module.exports = { defaults, duel, runBatch, singleLog, sweepRun, SWEEPS, analytic, seedRng, newBatch, stepBatch, batchResult };
+}
+
+</script>
+<script>
+(function () {
+  'use strict';
+  const $ = (id) => document.getElementById(id);
+  const fmt = (x, n) => Number(x).toFixed(n === undefined ? 1 : n);
+  const sg = (x) => (x >= 0 ? '+' : '') + x;
+
+  // ----- schema dei campi -----
+  const PAL_STATS = [
+    ['hp', 'Punti ferita'], ['ac', 'CA (armatura + scudo)'], ['prof', 'Competenza'],
+    ['strMod', 'Mod. Forza'], ['dexMod', 'Mod. Destrezza'], ['conMod', 'Mod. Costituzione'],
+    ['wisMod', 'Mod. Saggezza'], ['chaMod', 'Mod. Carisma'], ['speed', 'Velocità (ft)'],
+    ['slot1', 'Slot 1° livello'], ['slot2', 'Slot 2° livello'], ['loh', 'Imposizione delle Mani (PF)'],
+    ['cd', 'Incanalare Divinità'], ['hiddenUses', 'Passo Nascosto (usi)']
+  ];
+  const CLE_STATS = [
+    ['hp', 'Punti ferita'], ['ac', 'CA (armatura + scudo)'], ['prof', 'Competenza'],
+    ['wisMod', 'Mod. Saggezza'], ['dexMod', 'Mod. Destrezza'], ['conMod', 'Mod. Costituzione'],
+    ['chaMod', 'Mod. Carisma'], ['speed', 'Velocità (ft)'],
+    ['slot1', 'Slot 1° livello'], ['slot2', 'Slot 2° livello'], ['slot3', 'Slot 3° livello'], ['cd', 'Incanalare Divinità']
+  ];
+  const PAL_SEL = [
+    ['style', 'Stile di combattimento', [['duel', 'Duellante (+2 danni)'], ['def', 'Difesa (+1 CA)'], ['none', 'Nessuno']]],
+    ['smite', 'Punizione Divina', [['smart', 'Intelligente: slot 2° solo se letale o critico'], ['always', 'Slot più basso, ogni colpo'], ['always_high', 'Slot più alto, ogni colpo'], ['lvl1', 'Solo slot 1°'], ['lvl2', 'Solo slot 2°'], ['crit', 'Solo sui critici'], ['never', 'Mai']]],
+    ['rangedRounds', 'Attacco a distanza prima di caricare', [[0, 'No, carica subito'], [1, 'Per 1 round'], [2, 'Per 2 round'], [3, 'Per 3 round'], [99, 'Sempre a distanza']]],
+    ['actionSpell', 'Incantesimo d\'apertura (azione)', [['none', 'Nessuno'], ['hold', 'Blocca Persona'], ['bane', 'Anatema'], ['bless', 'Benedizione']]],
+    ['bonusSpell', 'Incantesimo con azione bonus', [['none', 'Nessuno'], ['hm', 'Marchio del Cacciatore'], ['branding', 'Marchio Infuocante'], ['sof', 'Scudo della Fede']]]
+  ];
+  const PAL_NUM2 = [['smiteReserve', 'Slot di Punizione da tenere in riserva'], ['smiteHpThr', 'Punizione solo se PF chierico sotto il %'], ['lohThr', 'Imposizione sotto il % di PF']];
+  const PAL_CHK = [
+    ['vow', 'Voto di Inimicizia', 'Azione bonus, vantaggio su tutti gli attacchi'],
+    ['hidden', 'Passo Nascosto', 'Invisibile fino al primo attacco'],
+    ['misty', 'Passo Velato per avvicinarsi', 'Teletrasporto di 30 ft con slot di 2° livello']
+  ];
+  const CLE_SEL = [
+    ['opening', 'Incantesimo di concentrazione', [['sg', 'Spirito Guardiano'], ['hold', 'Blocca Persona'], ['vt', 'Tocco Vampirico'], ['bane', 'Anatema'], ['bless', 'Benedizione']]],
+    ['noSlot', 'Azione senza slot', [['flame', 'Fiamma Sacra'], ['weapon', 'Attacco con l\'arma']]]
+  ];
+  const CLE_NUM2 = [['healThr', 'Cura sotto il % di PF']];
+  const CLE_CHK = [
+    ['lucky', 'Fortunato (Halfling)', 'Ritira gli 1 naturali'],
+    ['path', 'Sentiero verso la Tomba', 'Incanalare Divinità: il prossimo colpo infligge il doppio']
+  ];
+
+  const DEF = defaults();
+  const clone = (o) => JSON.parse(JSON.stringify(o));
+  const esc = (s) => String(s).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+
+  // ----- editor delle armi -----
+  const MELEE_PRE = [['Spada lunga', 1, 8], ['Spada corta', 1, 6], ['Stocco', 1, 8], ['Ascia da battaglia', 1, 8], ['Martello da guerra', 1, 8], ['Mazza', 1, 6], ['Spadone', 2, 6], ['Ascia bipenne', 1, 12]];
+  const RANGED_PRE = [['Giavellotto', 1, 6, 'str', 30, 120], ['Arco lungo', 1, 8, 'dex', 150, 600], ['Arco corto', 1, 6, 'dex', 80, 320], ['Balestra leggera', 1, 8, 'dex', 80, 320], ['Ascia a mano', 1, 6, 'str', 20, 60]];
+  const CLE_PRE = [['Mazza', 1, 6], ['Randello', 1, 4], ['Bastone ferrato', 1, 6], ['Martello leggero', 1, 4]];
+  const EXTRA_PRE = [
+    ['Fuoco (Lingua di Fiamma)', 2, 6, 0, 'hit'], ['Freddo', 1, 6, 0, 'hit'], ['Fulmine', 1, 6, 0, 'hit'], ['Radioso', 1, 8, 0, 'hit'],
+    ['Necrotico', 1, 8, 0, 'hit'], ['Danno extra solo sul critico', 2, 6, 0, 'crit'], ['Danno extra una volta per turno', 1, 6, 0, 'turn'],
+    ['Personalizzato', 1, 6, 0, 'hit']
+  ];
+  const TRIGGERS = [['hit', 'Ogni colpo'], ['crit', 'Solo critico'], ['turn', 'Primo colpo del turno'], ['first', 'Primo colpo del duello']];
+  const WMETA = {
+    pm: { title: 'Arma da mischia', pre: MELEE_PRE, ranged: false, cls: 'pal' },
+    pr: { title: 'Arma a distanza', pre: RANGED_PRE, ranged: true, cls: 'pal' },
+    cw: { title: 'Mischia del chierico', pre: CLE_PRE, ranged: false, cls: 'cle' }
+  };
+  let WS = freshWeapons();
+  function freshWeapons() { return { pm: clone(DEF.pal.melee), pr: clone(DEF.pal.ranged), cw: clone(DEF.cle.weapon) }; }
+  function wNum(k, f, label, val) {
+    return '<div class="field"><label for="w_' + k + '_' + f + '">' + label + '</label><input type="number" id="w_' + k + '_' + f + '" data-f="' + f + '" value="' + val + '" step="1"></div>';
+  }
+  function renderWeapon(k) {
+    const w = WS[k], m = WMETA[k];
+    let h = '<div class="weapon" data-w="' + k + '" style="--c: var(--' + (m.cls === 'pal' ? 'ember' : 'grave') + ')"><div class="wh"><b>' + m.title + '</b>' +
+      '<select id="w_' + k + '_pre" data-act="preset" aria-label="Modello di arma"><option value="">Scegli un modello…</option>' +
+      m.pre.map((p, i) => '<option value="' + i + '">' + p[0] + ' (' + p[1] + 'd' + p[2] + ')</option>').join('') + '</select></div>';
+    h += '<div class="fields">' + wNum(k, 'n', 'Dadi', w.n) + wNum(k, 'die', 'Facce del dado', w.die) + wNum(k, 'ench', 'Incantamento (+N)', w.ench);
+    if (m.ranged) {
+      h += '<div class="field"><label for="w_' + k + '_abil">Caratteristica</label><select id="w_' + k + '_abil" data-f="abil"><option value="str"' + (w.abil === 'str' ? ' selected' : '') + '>Forza</option><option value="dex"' + (w.abil === 'dex' ? ' selected' : '') + '>Destrezza</option></select></div>' +
+        wNum(k, 'normal', 'Gittata normale (ft)', w.normal) + wNum(k, 'long', 'Gittata lunga (ft)', w.long);
+    }
+    h += '</div><div class="xrows"><span class="lab">Danni aggiuntivi</span>';
+    if (w.extras.length) {
+      h += '<div class="xhead"><span>Nome</span><span>Dadi</span><span>Facce</span><span>Bonus</span><span>Quando</span><span></span></div>';
+      w.extras.forEach((e, i) => {
+        const p = 'w_' + k + '_x' + i + '_';
+        h += '<div class="xrow"><input type="text" id="' + p + 'label" data-xi="' + i + '" data-xf="label" value="' + esc(e.label) + '" aria-label="Nome del danno">' +
+          '<input type="number" id="' + p + 'n" data-xi="' + i + '" data-xf="n" value="' + e.n + '" aria-label="Dadi">' +
+          '<input type="number" id="' + p + 'die" data-xi="' + i + '" data-xf="die" value="' + e.die + '" aria-label="Facce">' +
+          '<input type="number" id="' + p + 'bonus" data-xi="' + i + '" data-xf="bonus" value="' + e.bonus + '" aria-label="Bonus fisso">' +
+          '<select id="' + p + 'trigger" data-xi="' + i + '" data-xf="trigger" aria-label="Quando si applica">' +
+          TRIGGERS.map((t) => '<option value="' + t[0] + '"' + (e.trigger === t[0] ? ' selected' : '') + '>' + t[1] + '</option>').join('') + '</select>' +
+          '<button type="button" data-act="del" data-xi="' + i + '" aria-label="Rimuovi">×</button></div>';
+      });
+    } else h += '<p class="note">Nessun danno aggiuntivo. Aggiungine uno per fuoco, freddo, radioso e simili.</p>';
+    h += '</div><div class="xadd"><select id="w_' + k + '_xpre" aria-label="Effetto da aggiungere">' +
+      EXTRA_PRE.map((p, i) => '<option value="' + i + '">' + p[0] + ' (' + (p[1] ? p[1] + 'd' + p[2] : '') + ')</option>').join('') +
+      '</select><button type="button" data-act="add">Aggiungi</button></div></div>';
+    $('w_' + k).innerHTML = h;
+  }
+  function renderWeapons() { ['pm', 'pr', 'cw'].forEach(renderWeapon); }
+  function cleanW(w, ranged) {
+    const o = {
+      n: Math.max(0, Math.round(+w.n || 0)), die: Math.max(1, Math.round(+w.die || 1)), ench: Math.round(+w.ench || 0),
+      extras: w.extras.map((e) => ({ label: String(e.label || 'Danno extra'), n: Math.max(0, Math.round(+e.n || 0)), die: Math.max(1, Math.round(+e.die || 1)), bonus: Math.round(+e.bonus || 0), trigger: e.trigger || 'hit' }))
+    };
+    if (ranged) { o.abil = w.abil === 'dex' ? 'dex' : 'str'; o.normal = Math.max(5, Math.round(+w.normal || 30)); o.long = Math.max(o.normal, Math.round(+w.long || o.normal)); }
+    return o;
+  }
+  function weaponEvents() {
+    ['pm', 'pr', 'cw'].forEach((k) => {
+      const root = $('w_' + k);
+      root.addEventListener('input', (e) => {
+        const t = e.target, w = WS[k];
+        if (t.dataset.xf) { w.extras[+t.dataset.xi][t.dataset.xf] = t.type === 'number' ? t.value : t.value; }
+        else if (t.dataset.f) w[t.dataset.f] = t.type === 'number' ? t.value : t.value;
+        derived();
+      });
+      root.addEventListener('change', (e) => {
+        const t = e.target, w = WS[k], m = WMETA[k];
+        if (t.dataset.act === 'preset' && t.value !== '') {
+          const p = m.pre[+t.value];
+          w.n = p[1]; w.die = p[2];
+          if (m.ranged) { w.abil = p[3]; w.normal = p[4]; w.long = p[5]; }
+          renderWeapon(k); derived();
+        }
+      });
+      root.addEventListener('click', (e) => {
+        const b = e.target.closest('button');
+        if (!b) return;
+        const w = WS[k];
+        if (b.dataset.act === 'add') {
+          const p = EXTRA_PRE[+$('w_' + k + '_xpre').value];
+          w.extras.push({ label: p[0] === 'Personalizzato' ? 'Danno extra' : p[0], n: p[1], die: p[2], bonus: p[3], trigger: p[4] });
+          renderWeapon(k); derived();
+        } else if (b.dataset.act === 'del') {
+          w.extras.splice(+b.dataset.xi, 1); renderWeapon(k); derived();
+        }
+      });
+    });
+  }
+
+  function numField(prefix, key, label, val) {
+    const id = prefix + '_' + key;
+    return '<div class="field"><label for="' + id + '">' + label + '</label><input type="number" id="' + id + '" value="' + val + '" step="1"></div>';
+  }
+  function selField(prefix, key, label, opts, val) {
+    const id = prefix + '_' + key;
+    return '<div class="field wide"><label for="' + id + '">' + label + '</label><select id="' + id + '">' +
+      opts.map((o) => '<option value="' + o[0] + '"' + (String(o[0]) === String(val) ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></div>';
+  }
+  function chkField(prefix, key, label, sub, val) {
+    const id = prefix + '_' + key;
+    return '<label class="check"><input type="checkbox" id="' + id + '"' + (val ? ' checked' : '') + '><span>' + label + '<small>' + sub + '</small></span></label>';
+  }
+  function render() {
+    const P = DEF.pal, C = DEF.cle;
+    $('f_pal').innerHTML = PAL_STATS.map((f) => numField('p', f[0], f[1], P[f[0]])).join('');
+    $('s_pal').innerHTML = PAL_SEL.map((f) => selField('p', f[0], f[1], f[2], P[f[0]])).join('') +
+      PAL_NUM2.map((f) => numField('p', f[0], f[1], P[f[0]])).join('');
+    $('k_pal').innerHTML = PAL_CHK.map((f) => chkField('p', f[0], f[1], f[2], P[f[0]])).join('');
+    $('f_cle').innerHTML = CLE_STATS.map((f) => numField('c', f[0], f[1], C[f[0]])).join('');
+    $('s_cle').innerHTML = CLE_SEL.map((f) => selField('c', f[0], f[1], f[2], C[f[0]])).join('') +
+      CLE_NUM2.map((f) => numField('c', f[0], f[1], C[f[0]])).join('');
+    $('k_cle').innerHTML = CLE_CHK.map((f) => chkField('c', f[0], f[1], f[2], C[f[0]])).join('');
+    $('g_dist').value = DEF.dist; $('g_rounds').value = DEF.maxRounds;
+    WS = freshWeapons(); renderWeapons();
+    $('w_key').innerHTML = Object.keys(SWEEPS).map((k) => '<option value="' + k + '">' + SWEEPS[k].label + '</option>').join('');
+    derived();
+  }
+
+  // ----- lettura configurazione -----
+  const num = (id, fallback, lo, hi) => {
+    let v = parseFloat($(id).value);
+    if (isNaN(v)) v = fallback;
+    if (lo !== undefined) v = Math.max(lo, v);
+    if (hi !== undefined) v = Math.min(hi, v);
+    return v;
+  };
+  function readCfg() {
+    const cfg = JSON.parse(JSON.stringify(DEF));
+    PAL_STATS.forEach((f) => { cfg.pal[f[0]] = num('p_' + f[0], DEF.pal[f[0]]); });
+    PAL_NUM2.forEach((f) => { cfg.pal[f[0]] = num('p_' + f[0], DEF.pal[f[0]], 0, 100); });
+    PAL_SEL.forEach((f) => { const v = $('p_' + f[0]).value; cfg.pal[f[0]] = isNaN(Number(v)) ? v : Number(v); });
+    PAL_CHK.forEach((f) => { cfg.pal[f[0]] = $('p_' + f[0]).checked; });
+    CLE_STATS.forEach((f) => { cfg.cle[f[0]] = num('c_' + f[0], DEF.cle[f[0]]); });
+    CLE_NUM2.forEach((f) => { cfg.cle[f[0]] = num('c_' + f[0], DEF.cle[f[0]], 0, 100); });
+    CLE_SEL.forEach((f) => { cfg.cle[f[0]] = $('c_' + f[0]).value; });
+    CLE_CHK.forEach((f) => { cfg.cle[f[0]] = $('c_' + f[0]).checked; });
+    cfg.pal.melee = cleanW(WS.pm, false); cfg.pal.melee.n = Math.max(1, cfg.pal.melee.n);
+    cfg.pal.ranged = cleanW(WS.pr, true); cfg.pal.ranged.n = Math.max(1, cfg.pal.ranged.n);
+    cfg.cle.weapon = cleanW(WS.cw, false); cfg.cle.weapon.n = Math.max(1, cfg.cle.weapon.n);
+    cfg.dist = num('g_dist', 30, 5, 300);
+    cfg.maxRounds = Math.round(num('g_rounds', 30, 3, 100));
+    ['hp'].forEach((k) => { cfg.pal[k] = Math.max(1, cfg.pal[k]); cfg.cle[k] = Math.max(1, cfg.cle[k]); });
+    ['slot1', 'slot2'].forEach((k) => { cfg.pal[k] = Math.max(0, Math.round(cfg.pal[k])); });
+    ['slot1', 'slot2', 'slot3'].forEach((k) => { cfg.cle[k] = Math.max(0, Math.round(cfg.cle[k])); });
+    return cfg;
+  }
+  function derived() {
+    const c = readCfg(), p = c.pal, k = c.cle;
+    const mw = p.melee, atk = p.strMod + p.prof + mw.ench, bon = p.strMod + (p.style === 'duel' ? 2 : 0) + mw.ench;
+    const exTxt = (w) => w.extras.map((e) => ' + ' + (e.n ? e.n + 'd' + e.die : '') + (e.bonus ? sg(e.bonus) : '') + ' ' + e.label).join('');
+    const cw = k.weapon;
+    $('d_pal').innerHTML = '<span>Attacco ' + sg(atk) + '</span><span>Danni ' + mw.n + 'd' + mw.die + sg(bon) + exTxt(mw) + '</span><span>CA ' + (p.ac + (p.style === 'def' ? 1 : 0)) +
+      '</span><span>TS Sag ' + sg(p.wisMod + p.prof) + '</span><span>CD incantesimi ' + (8 + p.prof + p.chaMod) + '</span><span>Iniz. ' + sg(p.dexMod) + '</span>';
+    $('d_cle').innerHTML = '<span>Att. incantesimi ' + sg(k.wisMod + k.prof) + '</span><span>CA ' + k.ac + '</span><span>TS Sag ' + sg(k.wisMod + k.prof) +
+      '</span><span>CD incantesimi ' + (8 + k.prof + k.wisMod) + '</span><span>Iniz. ' + sg(k.dexMod) + '</span>' +
+      '<span>Arma ' + sg(k.strMod + k.prof + cw.ench) + ', ' + cw.n + 'd' + cw.die + sg(k.strMod + cw.ench) + exTxt(cw) + '</span>';
+    renderAnalytic(c);
+  }
+
+  // ----- risultati -----
+  let busy = false;
+  function setBusy(b) { busy = b; ['b_run', 'b_one', 'b_sweep'].forEach((i) => { $(i).disabled = b; }); }
+  const SMITE_NAMES = {};
+  function srcRows(o, el) {
+    const keys = Object.keys(o).sort((a, b) => o[b] - o[a]);
+    const mx = keys.length ? o[keys[0]] : 1;
+    el.innerHTML = (el === $('r_src_p') ? '<span class="lab">Il paladino infligge</span>' : '<span class="lab">Il chierico infligge</span>') +
+      (keys.length ? keys.map((k) => '<div class="src-row"><span>' + k + '</span><span class="t"><i style="width:' + (100 * o[k] / mx) + '%"></i></span><span class="n">' + fmt(o[k]) + '</span></div>').join('') : '<span class="note">Nessun danno inflitto.</span>');
+  }
+  function showResult(r, cfg) {
+    $('r_meta').textContent = r.n.toLocaleString('it-IT') + ' duelli · partenza a ' + cfg.dist + ' ft';
+    $('r_pp').textContent = fmt(r.pWin) + '%'; $('r_cp').textContent = fmt(r.cWin) + '%';
+    $('r_bar').innerHTML = '<div class="wl-p" style="width:' + r.pWin + '%">' + (r.pWin > 9 ? fmt(r.pWin) + '%' : '') + '</div>' +
+      (r.draw > 0 ? '<div class="wl-d" style="width:' + r.draw + '%"></div>' : '') +
+      '<div class="wl-c" style="width:' + r.cWin + '%">' + (r.cWin > 9 ? fmt(r.cWin) + '%' : '') + '</div>';
+    $('r_err').textContent = 'Margine di errore sul paladino: ±' + fmt(r.se * 1.96) + ' punti (intervallo al 95%).' + (r.draw > 0 ? ' Pareggi: ' + fmt(r.draw) + '%.' : '');
+    $('r_stats').innerHTML =
+      stat('Durata media', fmt(r.avgRounds, 2) + ' round') +
+      stat('PF residui, se vince il paladino', fmt(r.avgHpP, 1)) +
+      stat('PF residui, se vince il chierico', fmt(r.avgHpC, 1)) +
+      stat('Duelli con paladino paralizzato', fmt(r.paraPct) + '%') +
+      stat('Duelli con Voto di Inimicizia', fmt(r.vowPct) + '%');
+    const last = Math.max(4, r.hist.reduce((m, v, i) => (v > 0 ? i : m), 0));
+    const mx = Math.max.apply(null, r.hist.slice(1, last + 1).concat([1]));
+    let h = '', x = '';
+    for (let i = 1; i <= last; i++) {
+      const pct = 100 * r.hist[i] / r.n;
+      h += '<div class="col" title="Round ' + i + ': ' + fmt(pct) + '%"><i style="height:' + (100 * r.hist[i] / mx) + '%"></i></div>';
+      x += '<span>' + i + '</span>';
+    }
+    $('r_hist').innerHTML = h; $('r_histx').innerHTML = x;
+    srcRows(r.dmgP, $('r_src_p')); srcRows(r.dmgC, $('r_src_c'));
+  }
+  function stat(l, v) { return '<div class="stat"><span class="lab">' + l + '</span><span class="v">' + v + '</span></div>'; }
+
+  function runSim() {
+    if (busy) return;
+    const cfg = readCfg();
+    const n = Math.round(num('g_n', 10000, 1, 500000));
+    const seed = $('g_seed').value;
+    setBusy(true);
+    const b = newBatch(cfg, n, seed === '' ? null : Number(seed));
+    const chunk = Math.max(500, Math.round(n / 40));
+    (function tick() {
+      const done = stepBatch(b, chunk);
+      $('r_prog').style.width = (100 * b.done / b.n) + '%';
+      if (done) { showResult(batchResult(b), cfg); setBusy(false); setTimeout(() => { $('r_prog').style.width = '0'; }, 400); }
+      else setTimeout(tick, 0);
+    })();
+  }
+
+  function runOne() {
+    if (busy) return;
+    const cfg = readCfg();
+    const seed = $('g_seed').value;
+    const s = singleLog(cfg, seed === '' ? null : Number(seed));
+    let html = '';
+    s.lines.forEach((l) => {
+      const esc = l.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+      if (l.startsWith('---')) html += '<span class="rd">' + esc + '</span>';
+      else if (l.startsWith('Paladino (')) html += '<span class="tp">' + esc + '</span>';
+      else if (l.startsWith('Chierico (')) html += '<span class="tc">' + esc + '</span>';
+      else if (l.startsWith('VINCE') || l.startsWith('PAREGGIO')) html += '<span class="win">' + esc + '</span>';
+      else html += '<span class="ln">' + esc + '</span>\n';
+    });
+    $('log').innerHTML = html;
+    $('log').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  // ----- analisi -----
+  function renderAnalytic(cfg) {
+    const rows = analytic(cfg);
+    $('t_an').innerHTML = '<thead><tr><th>Opzione</th><th class="num">Colpire</th><th class="num">Danni/attacco</th><th class="num">Danni/round</th><th class="num">Almeno 1 colpo</th><th class="num">Round per 0 PF</th></tr></thead><tbody>' +
+      rows.map((r) => '<tr><td>' + r.name + '</td><td class="num">' + fmt(r.p, 0) + '%</td><td class="num">' + fmt(r.att, 1) + '</td><td class="num">' + fmt(r.rnd, 1) + '</td><td class="num">' + fmt(r.p1, 0) + '%</td><td class="num">' + fmt(r.rounds, 1) + '</td></tr>').join('') + '</tbody>';
+  }
+
+  // ----- confronti -----
+  function runSweep() {
+    if (busy) return;
+    const cfg = readCfg();
+    const key = $('w_key').value;
+    const sw = SWEEPS[key];
+    const nTot = Math.round(num('g_n', 10000, 1, 500000));
+    const n = Math.max(500, Math.min(nTot, 10000));
+    const seed = $('g_seed').value;
+    setBusy(true);
+    const rows = [];
+    let i = 0;
+    $('t_sw').innerHTML = '';
+    (function next() {
+      if (i >= sw.values.length) { setBusy(false); setTimeout(() => { $('w_prog').style.width = '0'; }, 400); return; }
+      const c = JSON.parse(JSON.stringify(cfg));
+      setPath(c, sw.path, sw.values[i]);
+      const r = runBatch(c, n, seed === '' ? null : Number(seed));
+      rows.push({ name: sw.names[sw.values[i]], r });
+      i++;
+      $('w_prog').style.width = (100 * i / sw.values.length) + '%';
+      drawSweep(sw, rows, n);
+      setTimeout(next, 0);
+    })();
+  }
+  function drawSweep(sw, rows, n) {
+    $('t_sw').innerHTML = '<thead><tr><th>' + sw.label + '</th><th>Esito</th><th class="num">Paladino</th><th class="num">Chierico</th><th class="num">Round medi</th></tr></thead><tbody>' +
+      rows.map((x) => '<tr><td>' + x.name + '</td><td><div class="mini"><i class="a" style="width:' + x.r.pWin + '%"></i><i class="c" style="width:' + x.r.draw + '%"></i><i class="b" style="width:' + x.r.cWin + '%"></i></div></td><td class="num">' + fmt(x.r.pWin) + '%</td><td class="num">' + fmt(x.r.cWin) + '%</td><td class="num">' + fmt(x.r.avgRounds, 2) + '</td></tr>').join('') +
+      '</tbody><caption style="caption-side:bottom;text-align:left;padding-top:8px;color:var(--muted);font-size:.9rem">' + n.toLocaleString('it-IT') + ' duelli per riga, margine di errore circa ±1 punto.</caption>';
+  }
+
+  // ----- eventi -----
+  document.addEventListener('input', (e) => { if (e.target.closest('.sheet') || e.target.id === 'g_dist' || e.target.id === 'g_rounds') derived(); });
+  $('b_run').addEventListener('click', runSim);
+  $('b_one').addEventListener('click', runOne);
+  $('b_sweep').addEventListener('click', runSweep);
+  $('b_reset').addEventListener('click', () => { render(); $('g_n').value = 10000; $('g_seed').value = ''; });
+
+  render();
+  weaponEvents();
+  runSim();
+})();
+</script>

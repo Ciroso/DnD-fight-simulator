@@ -1,0 +1,15 @@
+const E=require('../src/engine.js');
+const base=E.defaults();
+const run=(c,n=8000)=>{const r=E.runBatch(c,n,1);return `${r.pWin.toFixed(1)}% / ${r.cWin.toFixed(1)}%  round ${r.avgRounds.toFixed(2)}`;};
+console.log('default (smart)       ',run(base));
+let c=JSON.parse(JSON.stringify(base)); c.pal.smite='always_high'; console.log('always_high           ',run(c));
+c=JSON.parse(JSON.stringify(base)); c.pal.smite='never'; console.log('no smite              ',run(c));
+c=JSON.parse(JSON.stringify(base)); c.pal.smite='never'; c.pal.melee.ench=1; console.log('+1, no smite          ',run(c));
+c.pal.melee.extras=[{label:'Fuoco (Lingua di Fiamma)',n:2,die:6,bonus:0,trigger:'hit'}]; console.log('+1 flame tongue       ',run(c));
+c=JSON.parse(JSON.stringify(base)); c.pal.smiteReserve=2; console.log('smart, riserva 2      ',run(c));
+c=JSON.parse(JSON.stringify(base)); c.pal.smiteHpThr=50; console.log('smart, solo <50% PF   ',run(c));
+c=JSON.parse(JSON.stringify(base)); c.cle.noSlot='weapon'; c.cle.weapon={n:1,die:6,ench:2,extras:[{label:'Radioso',n:1,die:8,bonus:0,trigger:'hit'}]}; console.log('cleric +2 radiant mace',run(c));
+const r=E.runBatch(JSON.parse(JSON.stringify(c)),2000,3); console.log(r.dmgC);
+c=JSON.parse(JSON.stringify(base)); c.pal.melee.extras=[{label:'Una volta',n:1,die:6,bonus:0,trigger:'turn'},{label:'Crit',n:2,die:6,bonus:0,trigger:'crit'}]; console.log(E.runBatch(c,2000,3).dmgP);
+console.log(E.analytic(c).slice(0,3).map(x=>x.name+' '+x.rnd.toFixed(1)).join('\n'));
+console.log(E.singleLog(c,5).lines.slice(0,14).join('\n'));
