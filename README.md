@@ -1,6 +1,6 @@
 # D&D fight simulator
 
-Simulatore di duelli per D&D 5e: **Paladino della Vendetta (Firbolg)** contro **Chierico della Tomba (Halfling)**, livello 5 di default. Combatte il duello migliaia di volte e mostra le medie.
+Simulatore di duelli per D&D 5e: **Paladino della Vendetta (Firbolg)** contro **Chierico della Tomba (Halfling)**, livello 8 di default. Combatte il duello migliaia di volte e mostra le medie.
 
 ## Uso
 
@@ -25,4 +25,4 @@ Dopo aver modificato `src/`, esegui `python3 build.py` per rigenerare la pagina.
 
 ## Regole modellate
 
-Combattimento 1 contro 1 fino a 0 PF, il chierico resta fermo. Non modellati: dimezzamento della velocità dentro Spirito Guardiano, riposi, talenti, Raggio Indebolente, Sanctuary. L'Aura di Protezione arriva al livello 6.
+Combattimento 1 contro 1 fino a 0 PF, il chierico resta fermo. Non modellati: dimezzamento della velocità dentro Spirito Guardiano, riposi, talenti, Raggio Indebolente, Sanctuary. Banishment e gli altri incantesimi di 4° livello oltre Avvizzire.
