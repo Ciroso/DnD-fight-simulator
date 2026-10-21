@@ -155,19 +155,19 @@ details.rules ul { margin: 12px 0 0; padding-left: 1.2rem; display: flex; flex-d
 <div class="wrap">
   <header>
     <h1>Duello D&amp;D</h1>
-    <p class="lede">Paladino della Vendetta (Firbolg) contro Chierico della Tomba (Halfling), 5ª edizione, livello 5. Regola le statistiche e le strategie, scegli quante volte combattere e leggi le medie.</p>
+    <p class="lede">Paladino della Vendetta (Firbolg) contro Chierico della Tomba (Halfling), 5ª edizione, livello 8. Regola le statistiche e le strategie, scegli quante volte combattere e leggi le medie.</p>
   </header>
 
   <section class="sheets" aria-label="Personaggi">
     <div class="sheet pal">
-      <div class="sheet-h"><span class="who">Paladino</span><span class="sub">Giuramento della Vendetta · Firbolg</span></div>
+      <div class="sheet-h"><span class="who">Paladino</span><span class="sub">Livello 8 · Giuramento della Vendetta · Firbolg</span></div>
       <div class="derived" id="d_pal"></div>
       <div class="grp"><span class="lab">Statistiche</span><div class="fields" id="f_pal"></div></div>
       <div class="grp"><span class="lab">Armi</span><div id="w_pm" class="weapons"></div><div id="w_pr" class="weapons"></div><p class="note">Le armi a due mani non hanno uno stile dedicato: togli lo stile Duellante e il bonus dello scudo dalla CA.</p></div>
       <div class="grp"><span class="lab">Strategia</span><div class="fields" id="s_pal"></div><div class="checks" id="k_pal"></div></div>
     </div>
     <div class="sheet cle">
-      <div class="sheet-h"><span class="who">Chierico</span><span class="sub">Dominio della Tomba · Halfling</span></div>
+      <div class="sheet-h"><span class="who">Chierico</span><span class="sub">Livello 8 · Dominio della Tomba · Halfling</span></div>
       <div class="derived" id="d_cle"></div>
       <div class="grp"><span class="lab">Statistiche</span><div class="fields" id="f_cle"></div></div>
       <div class="grp"><span class="lab">Arma</span><div id="w_cw" class="weapons"></div><p class="note">Usata solo se scegli «Attacco con l'arma» come azione senza slot. L'Arma Spirituale non è influenzata dall'incantamento.</p></div>
@@ -235,8 +235,9 @@ details.rules ul { margin: 12px 0 0; padding-left: 1.2rem; display: flex; flex-d
       <li>Chierico: Spirito Guardiano (danni all'inizio del turno del paladino se entro 15 ft e quando entra nell'area), Blocca Persona, Tocco Vampirico, Anatema, Benedizione, Arma Spirituale, Fiamma Sacra, Infliggi Ferite su bersaglio paralizzato (critico automatico), Cura Ferite, Sentiero verso la Tomba (il prossimo colpo contro il paladino infligge il doppio). Fortunato dell'halfling: ritira gli 1 naturali su attacchi, tiri salvezza e iniziativa.</li>
       <li>Armi: l'incantamento (+N) si somma a colpire e ai danni. I danni aggiuntivi possono valere a ogni colpo, solo sul critico, al primo colpo di ogni turno o al primo colpo del duello. Sui critici i dadi si raddoppiano, tranne per l'effetto «solo critico». La Punizione Divina dipende dalla politica scelta: la modalità intelligente usa lo slot di 1° livello sui colpi normali e tiene quello di 2° per i critici e i colpi letali. Puoi anche tenere slot in riserva o smitare solo quando il chierico è sotto una certa percentuale di PF.</li>
       <li>Concentrazione: ogni danno richiede un tiro salvezza su Costituzione (CD 10 o metà del danno). Essere paralizzato interrompe la concentrazione.</li>
-      <li>Non modellati: dimezzamento della velocità dentro Spirito Guardiano, riposi, oggetti magici, talenti, Raggio Indebolente e Sanctuary. L'Aura di Protezione arriva al livello 6.</li>
-      <li>A livello 5 il paladino non ha incantesimi offensivi a distanza. Per colpire da lontano usa un'arma, con Marchio Infuocante come bonus una tantum.</li>
+      <li>Non modellati: dimezzamento della velocità dentro Spirito Guardiano, riposi, oggetti magici, talenti, Raggio Indebolente e Sanctuary. Banishment e altri incantesimi di 4° livello oltre Avvizzire.</li>
+      <li>A livello 8 il paladino non ha incantesimi offensivi a distanza. Per colpire da lontano usa un'arma, con Marchio Infuocante come bonus una tantum.</li>
+      <li>Livello 8: Aura di Protezione (+ Carisma a tutti i tiri salvezza del paladino), Sentinella alle Porte della Morte (il chierico trasforma un critico in un colpo normale, quando non è paralizzato), Incantesimi Potenziati (+ Saggezza ai trucchetti), Avvizzire (8d8 necrotici), Rintocco dei Morti.</li>
     </ul>
   </details>
 </div>
@@ -263,7 +264,7 @@ details.rules ul { margin: 12px 0 0; padding-left: 1.2rem; display: flex; flex-d
     ['hp', 'Punti ferita'], ['ac', 'CA (armatura + scudo)'], ['prof', 'Competenza'],
     ['wisMod', 'Mod. Saggezza'], ['dexMod', 'Mod. Destrezza'], ['conMod', 'Mod. Costituzione'],
     ['chaMod', 'Mod. Carisma'], ['speed', 'Velocità (ft)'],
-    ['slot1', 'Slot 1° livello'], ['slot2', 'Slot 2° livello'], ['slot3', 'Slot 3° livello'], ['cd', 'Incanalare Divinità']
+    ['slot1', 'Slot 1° livello'], ['slot2', 'Slot 2° livello'], ['slot3', 'Slot 3° livello'], ['slot4', 'Slot 4° livello'], ['cd', 'Incanalare Divinità (usi)'], ['sentinel', 'Sentinella (usi)']
   ];
   const PAL_SEL = [
     ['style', 'Stile di combattimento', [['duel', 'Duellante (+2 danni)'], ['def', 'Difesa (+1 CA)'], ['none', 'Nessuno']]],
@@ -274,18 +275,21 @@ details.rules ul { margin: 12px 0 0; padding-left: 1.2rem; display: flex; flex-d
   ];
   const PAL_NUM2 = [['smiteReserve', 'Slot di Punizione da tenere in riserva'], ['smiteHpThr', 'Punizione solo se PF chierico sotto il %'], ['lohThr', 'Imposizione sotto il % di PF']];
   const PAL_CHK = [
+    ['aura', 'Aura di Protezione', 'Aggiunge il mod. di Carisma a tutti i tiri salvezza (liv. 6)'],
     ['vow', 'Voto di Inimicizia', 'Azione bonus, vantaggio su tutti gli attacchi'],
     ['hidden', 'Passo Nascosto', 'Invisibile fino al primo attacco'],
     ['misty', 'Passo Velato per avvicinarsi', 'Teletrasporto di 30 ft con slot di 2° livello']
   ];
   const CLE_SEL = [
     ['opening', 'Incantesimo di concentrazione', [['sg', 'Spirito Guardiano'], ['hold', 'Blocca Persona'], ['vt', 'Tocco Vampirico'], ['bane', 'Anatema'], ['bless', 'Benedizione']]],
-    ['noSlot', 'Azione senza slot', [['flame', 'Fiamma Sacra'], ['weapon', 'Attacco con l\'arma']]]
+    ['noSlot', 'Azione senza slot', [['flame', 'Fiamma Sacra'], ['toll', 'Rintocco dei Morti'], ['weapon', 'Attacco con l\'arma']]]
   ];
   const CLE_NUM2 = [['healThr', 'Cura sotto il % di PF']];
   const CLE_CHK = [
     ['lucky', 'Fortunato (Halfling)', 'Ritira gli 1 naturali'],
-    ['path', 'Sentiero verso la Tomba', 'Incanalare Divinità: il prossimo colpo infligge il doppio']
+    ['path', 'Sentiero verso la Tomba', 'Incanalare Divinità: il prossimo colpo infligge il doppio'],
+    ['blight', 'Avvizzire', 'Usa gli slot di 4° livello per 8d8 necrotici (TS Costituzione)'],
+    ['potent', 'Incantesimi Potenziati (liv. 8)', 'Aggiunge il mod. di Saggezza ai danni dei trucchetti']
   ];
 
   const DEF = defaults();
@@ -437,7 +441,7 @@ details.rules ul { margin: 12px 0 0; padding-left: 1.2rem; display: flex; flex-d
     cfg.maxRounds = Math.round(num('g_rounds', 30, 3, 100));
     ['hp'].forEach((k) => { cfg.pal[k] = Math.max(1, cfg.pal[k]); cfg.cle[k] = Math.max(1, cfg.cle[k]); });
     ['slot1', 'slot2'].forEach((k) => { cfg.pal[k] = Math.max(0, Math.round(cfg.pal[k])); });
-    ['slot1', 'slot2', 'slot3'].forEach((k) => { cfg.cle[k] = Math.max(0, Math.round(cfg.cle[k])); });
+    ['slot1', 'slot2', 'slot3', 'slot4', 'sentinel', 'cd'].forEach((k) => { cfg.cle[k] = Math.max(0, Math.round(cfg.cle[k])); });
     return cfg;
   }
   function derived() {
@@ -446,7 +450,7 @@ details.rules ul { margin: 12px 0 0; padding-left: 1.2rem; display: flex; flex-d
     const exTxt = (w) => w.extras.map((e) => ' + ' + (e.n ? e.n + 'd' + e.die : '') + (e.bonus ? sg(e.bonus) : '') + ' ' + e.label).join('');
     const cw = k.weapon;
     $('d_pal').innerHTML = '<span>Attacco ' + sg(atk) + '</span><span>Danni ' + mw.n + 'd' + mw.die + sg(bon) + exTxt(mw) + '</span><span>CA ' + (p.ac + (p.style === 'def' ? 1 : 0)) +
-      '</span><span>TS Sag ' + sg(p.wisMod + p.prof) + '</span><span>CD incantesimi ' + (8 + p.prof + p.chaMod) + '</span><span>Iniz. ' + sg(p.dexMod) + '</span>';
+      '</span><span>TS Sag ' + sg(p.wisMod + p.prof + (p.aura ? Math.max(1, p.chaMod) : 0)) + '</span><span>CD incantesimi ' + (8 + p.prof + p.chaMod) + '</span><span>Iniz. ' + sg(p.dexMod) + '</span>';
     $('d_cle').innerHTML = '<span>Att. incantesimi ' + sg(k.wisMod + k.prof) + '</span><span>CA ' + k.ac + '</span><span>TS Sag ' + sg(k.wisMod + k.prof) +
       '</span><span>CD incantesimi ' + (8 + k.prof + k.wisMod) + '</span><span>Iniz. ' + sg(k.dexMod) + '</span>' +
       '<span>Arma ' + sg(k.strMod + k.prof + cw.ench) + ', ' + cw.n + 'd' + cw.die + sg(k.strMod + cw.ench) + exTxt(cw) + '</span>';

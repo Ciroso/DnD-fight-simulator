@@ -1,6 +1,6 @@
 // ============================================================================
 // MOTORE DI SIMULAZIONE - Paladino della Vendetta (Firbolg) vs Chierico della Tomba (Halfling)
-// D&D 5e, livello 5 di default. Tutto e' configurabile dall'oggetto cfg.
+// D&D 5e, livello 8 di default. Tutto e' configurabile dall'oggetto cfg.
 // ============================================================================
 'use strict';
 
@@ -33,9 +33,10 @@ function defaults() {
   return {
     dist: 30, maxRounds: 30,
     pal: {
-      // Firbolg: FOR 15+1, SAG 10+2. ASI al 4 in FOR. Competenza TS: SAG e CAR.
-      hp: 44, ac: 18, prof: 3, strMod: 4, dexMod: -1, conMod: 2, wisMod: 1, chaMod: 1,
-      style: 'duel', speed: 30, slot1: 4, slot2: 2, loh: 25, lohThr: 35, cd: 1, hiddenUses: 3,
+      // Livello 8. Firbolg: FOR 15+1, SAG 10+2. ASI al 4 e all'8 in FOR (20). Competenza TS: SAG e CAR.
+      // Aura di Protezione (liv. 6): aggiunge il mod. di Carisma a tutti i tiri salvezza.
+      hp: 68, ac: 18, prof: 3, strMod: 5, dexMod: -1, conMod: 2, wisMod: 1, chaMod: 1, aura: true,
+      style: 'duel', speed: 30, slot1: 4, slot2: 3, loh: 40, lohThr: 35, cd: 1, hiddenUses: 3,
       melee: { n: 1, die: 8, ench: 0, extras: [] },
       ranged: { n: 1, die: 6, abil: 'str', normal: 30, long: 120, ench: 0, extras: [] },
       // strategia
@@ -43,9 +44,12 @@ function defaults() {
       vow: true, hidden: true, misty: true, actionSpell: 'none', bonusSpell: 'none'
     },
     cle: {
-      // Halfling (Piedelesto): DES+2, CAR+1. Tomba. ASI al 4 in SAG. Competenza TS: SAG e CAR.
-      hp: 38, ac: 18, prof: 3, wisMod: 4, dexMod: 2, conMod: 2, chaMod: 0, strMod: -1,
-      speed: 25, slot1: 4, slot2: 3, slot3: 2, healThr: 30, lucky: true, path: true, cd: 1,
+      // Livello 8. Halfling (Piedelesto): DES+2, CAR+1. Tomba. ASI al 4 e all'8 in SAG (20). Competenza TS: SAG e CAR.
+      // Sentinella alle Porte della Morte (liv. 6): trasforma un critico subito in un colpo normale, SAG volte.
+      // Incantesimi Potenziati (liv. 8): aggiunge il mod. di SAG ai danni dei trucchetti.
+      hp: 59, ac: 18, prof: 3, wisMod: 5, dexMod: 2, conMod: 2, chaMod: 0, strMod: -1,
+      speed: 25, slot1: 4, slot2: 3, slot3: 3, slot4: 2, healThr: 30, lucky: true, path: true, cd: 2,
+      sentinel: 5, potent: true, blight: true,
       opening: 'sg', noSlot: 'flame',
       weapon: { n: 1, die: 6, ench: 0, extras: [] }
     }
@@ -61,7 +65,7 @@ function duel(cfg, log) {
     round: 0, rangedLast: false, paraRounds: 0, openDone: false, vowUsed: false, turnHit: false, firstHit: false
   };
   const cle = {
-    hp: cc.hp, max: cc.hp, s1: cc.slot1, s2: cc.slot2, s3: cc.slot3, cd: cc.cd,
+    hp: cc.hp, max: cc.hp, s1: cc.slot1, s2: cc.slot2, s3: cc.slot3, s4: cc.slot4 | 0, cd: cc.cd, sd: cc.sentinel | 0,
     conc: null, para: false, sw: 0, cursed: false, curseTurn: 0, turn: 0, holdTries: 0, turnHit: false, firstHit: false
   };
   let dist = cfg.dist;
@@ -75,7 +79,8 @@ function duel(cfg, log) {
   const palDmgB = pc.strMod + (pc.style === 'duel' ? 2 : 0) + (MW.ench | 0);
   const rMod = RW.abil === 'dex' ? pc.dexMod : pc.strMod;
   const rAtk = rMod + pc.prof + (RW.ench | 0), rBon = rMod + (RW.ench | 0);
-  const palSv = { dex: pc.dexMod, con: pc.conMod, wis: pc.wisMod + pc.prof, cha: pc.chaMod + pc.prof };
+  const aura = pc.aura ? Math.max(1, pc.chaMod) : 0;
+  const palSv = { dex: pc.dexMod + aura, con: pc.conMod + aura, wis: pc.wisMod + pc.prof + aura, cha: pc.chaMod + pc.prof + aura };
   const cleSv = { dex: cc.dexMod, con: cc.conMod, wis: cc.wisMod + cc.prof, cha: cc.chaMod + cc.prof };
   const palDC = 8 + pc.prof + pc.chaMod, cleDC = 8 + cc.prof + cc.wisMod, cleAtk = cc.prof + cc.wisMod;
   const cleWAtk = cc.strMod + cc.prof + (CW.ench | 0), cleWBon = cc.strMod + (CW.ench | 0);
@@ -287,7 +292,11 @@ function duel(cfg, log) {
         const ar = atkRoll(melee ? palAtk : rAtk, cc.ac, adv, dis, false, palBless(), palBane());
         pal.inv = false;
         if (!ar.hit) { if (say) say(`   Attacco ${i + 1} (${melee ? 'mischia' : 'distanza'}): mancato.`); continue; }
-        const crit = ar.crit || (cle.para && dist <= 5);
+        let crit = ar.crit || (cle.para && dist <= 5);
+        if (crit && !cle.para && cle.sd > 0) {
+          crit = false; cle.sd--;
+          if (say) say('   Sentinella alle Porte della Morte: il critico diventa un colpo normale.');
+        }
         const base = d((W.n | 0) * (crit ? 2 : 1), W.die | 0) + (melee ? palDmgB : rBon);
         add(dmgP, 'Arma', base);
         let tot = base; const parts = [`arma ${base}`];
@@ -325,6 +334,15 @@ function duel(cfg, log) {
 
     if (cle.conc === 'sg' && dist > 15 && pal.rangedLast) dropCleConc();
 
+    // slot piu' basso disponibile; il 4° resta in riserva per Avvizzire se abilitato
+    function lowSlot() {
+      if (cle.s1 > 0) return 1;
+      if (cle.s2 > 0) return 2;
+      if (cle.s3 > 0) return 3;
+      if (cle.s4 > 0 && !(cc.blight)) return 4;
+      return 0;
+    }
+    function spendSlot(lv) { cle['s' + lv]--; }
     function vtAttack() {
       if (dist > 5) dist = 5;
       const ar = atkRoll(cleAtk, palAC(), pal.para, false, cc.lucky, cleBless(), cleBane());
@@ -384,9 +402,9 @@ function duel(cfg, log) {
       }
     }
     // 2) paladino paralizzato: Infliggi Ferite (critico automatico)
-    if (!acted && pal.para && canT && reach && (cle.s1 + cle.s2 + cle.s3) > 0) {
-      const lv = cle.s1 > 0 ? 1 : (cle.s2 > 0 ? 2 : 3);
-      if (lv === 1) cle.s1--; else if (lv === 2) cle.s2--; else cle.s3--;
+    if (!acted && pal.para && canT && reach && lowSlot() > 0) {
+      const lv = lowSlot();
+      spendSlot(lv);
       if (dist > 5) dist = 5;
       let dmg = d((2 + lv) * 2, 10);
       if (cle.cursed) { dmg *= 2; cle.cursed = false; if (say) say('   (Sentiero verso la Tomba: danni raddoppiati)'); }
@@ -397,13 +415,22 @@ function duel(cfg, log) {
     // 3) Tocco Vampirico continuato
     if (!acted && cle.conc === 'vt' && canT && reach) { vtAttack(); acted = true; }
     // 4) cura
-    if (!acted && cle.hp <= cle.max * cc.healThr / 100 && (cle.s1 + cle.s2 + cle.s3) > 0) {
-      const lv = cle.s1 > 0 ? 1 : (cle.s2 > 0 ? 2 : 3);
-      if (lv === 1) cle.s1--; else if (lv === 2) cle.s2--; else cle.s3--;
+    if (!acted && cle.hp <= cle.max * cc.healThr / 100 && lowSlot() > 0) {
+      const lv = lowSlot();
+      spendSlot(lv);
       const h = d(lv, 8) + cc.wisMod;
       cle.hp = Math.min(cle.max, cle.hp + h);
       acted = true; slotAct = true;
       if (say) say(`   Cura Ferite lv${lv}: +${h} PF (PF ${cle.hp}).`);
+    }
+    // 4b) Avvizzire (4° livello, Tomba): 8d8 necrotici, TS Costituzione per meta'
+    if (!acted && cc.blight && cle.s4 > 0 && canT && dist <= 30 && !pal.para) {
+      cle.s4--; acted = true; slotAct = true;
+      let dmg = d(8, 8);
+      const ok = saveP(palSv.con, cleDC, false);
+      if (ok) dmg = Math.floor(dmg / 2);
+      hurtPal(dmg, 'Avvizzire');
+      if (say) say(`   Avvizzire: ${dmg} danni necrotici (TS ${ok ? 'riuscito' : 'fallito'}).`);
     }
     // 5) Sentiero verso la Tomba (Incanalare Divinita')
     if (!acted && cc.path && cle.cd > 0 && !cle.cursed && !pal.para && canT && dist <= 30
@@ -414,11 +441,21 @@ function duel(cfg, log) {
     // 6) azione senza slot: arma oppure Fiamma Sacra
     if (!acted && canT && cc.noSlot === 'weapon' && reach) { weaponAttack(); acted = true; }
     if (!acted && canT && dist <= 60) {
-      const ok = saveP(palSv.dex, cleDC, pal.para);
-      if (!ok) {
-        const x = d(2, 8); hurtPal(x, 'Fiamma Sacra');
-        if (say) say(`   Fiamma Sacra: ${x} danni.`);
-      } else if (say) say('   Fiamma Sacra: il paladino evita.');
+      const potent = cc.potent ? cc.wisMod : 0;
+      if (cc.noSlot === 'toll') {
+        // Rintocco dei Morti: TS Saggezza, 2d12 se il bersaglio ha perso PF, altrimenti 2d8
+        const ok = saveP(palSv.wis, cleDC, false);
+        if (!ok) {
+          const x = (pal.hp < pal.max ? d(2, 12) : d(2, 8)) + potent; hurtPal(x, 'Rintocco dei Morti');
+          if (say) say(`   Rintocco dei Morti: ${x} danni.`);
+        } else if (say) say('   Rintocco dei Morti: il paladino resiste.');
+      } else {
+        const ok = saveP(palSv.dex, cleDC, pal.para);
+        if (!ok) {
+          const x = d(2, 8) + potent; hurtPal(x, 'Fiamma Sacra');
+          if (say) say(`   Fiamma Sacra: ${x} danni.`);
+        } else if (say) say('   Fiamma Sacra: il paladino evita.');
+      }
       acted = true;
     }
     if (pal.hp <= 0) return;
@@ -521,8 +558,11 @@ const SWEEPS = {
     names: { 100: 'Sempre', 75: '75% dei PF', 50: '50% dei PF', 30: '30% dei PF' } },
   ench: { label: 'Incantamento dell\'arma da mischia del paladino', path: 'pal.melee.ench', values: [0, 1, 2, 3],
     names: { 0: 'Arma normale', 1: '+1', 2: '+2', 3: '+3' } },
-  cleWeapon: { label: 'Azione del chierico senza slot', path: 'cle.noSlot', values: ['flame', 'weapon'],
-    names: { flame: 'Fiamma Sacra', weapon: 'Attacco con l\'arma' } },
+  cleWeapon: { label: 'Azione del chierico senza slot', path: 'cle.noSlot', values: ['flame', 'toll', 'weapon'],
+    names: { flame: 'Fiamma Sacra', toll: 'Rintocco dei Morti', weapon: 'Attacco con l\'arma' } },
+  blight: { label: 'Avvizzire del chierico (4° livello)', path: 'cle.blight', values: [false, true], names: { false: 'No', true: 'Sì' } },
+  sentinel: { label: 'Sentinella alle Porte della Morte (usi)', path: 'cle.sentinel', values: [0, 2, 5], names: { 0: 'Nessun uso', 2: '2 usi', 5: '5 usi' } },
+  aura: { label: 'Aura di Protezione del paladino', path: 'pal.aura', values: [false, true], names: { false: 'No', true: 'Sì' } },
   dist: { label: 'Distanza iniziale', path: 'dist', values: [5, 15, 30, 60, 90],
     names: { 5: '5 ft', 15: '15 ft', 30: '30 ft', 60: '60 ft', 90: '90 ft' } },
   ranged: { label: 'Round di attacco a distanza prima di caricare', path: 'pal.rangedRounds', values: [0, 1, 2, 3, 99],
