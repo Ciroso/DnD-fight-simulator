@@ -20,7 +20,6 @@ Apri `duello_dnd.html` in un browser (doppio clic, funziona anche offline). Non 
 | `src/template.html` | Interfaccia grafica |
 | `build.py` | Unisce template e motore in `duello_dnd.html` |
 | `tests/` | Prove da riga di comando con Node (`node tests/test_smoke.js`) |
-| `legacy/duello_dnd.py` | Prima versione da terminale, superata: usa un bonus errato ai tiri salvezza su Saggezza del paladino |
 
 Dopo aver modificato `src/`, esegui `python3 build.py` per rigenerare la pagina.
 
